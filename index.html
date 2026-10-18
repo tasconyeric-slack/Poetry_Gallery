@@ -7,7 +7,9 @@
   <meta name="description" content="诗词馆——把写给岁月的诗，认真收藏。" />
   <title>诗词馆 · 把岁月写成诗</title>
   <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./cms.css" />
   <script defer src="./app.js"></script>
+  <script type="module" src="./cms.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到正文</a>
@@ -50,24 +52,28 @@
           <p class="heading-aside">在字里行间，重逢某个时刻。</p>
         </div>
 
-        <div class="demo-notice" role="note"><span class="notice-symbol">※</span> 当前展示的是<strong>古典诗词示例</strong>，用于预览版式；正式上线后将替换为个人原创作品。</div>
+        <div id="demo-notice" class="demo-notice" role="note"><span class="notice-symbol">※</span> 当前展示的是<strong>古典诗词示例</strong>，用于预览版式；正式上线后将替换为个人原创作品。</div>
 
+        <p id="collection-status" class="collection-status" role="status" aria-live="polite" hidden></p>
         <div class="archive-tools">
           <div class="filters" role="group" aria-label="按体裁筛选">
             <button class="filter active" type="button" data-filter="全部" aria-pressed="true">全部</button>
             <button class="filter" type="button" data-filter="五言" aria-pressed="false">五言</button>
             <button class="filter" type="button" data-filter="七言" aria-pressed="false">七言</button>
+            <button class="filter" type="button" data-filter="词" aria-pressed="false">词</button>
+            <button class="filter" type="button" data-filter="其他" aria-pressed="false">其他</button>
           </div>
           <label class="search-wrap"><span class="sr-only">搜索诗名或作者</span><span aria-hidden="true">⌕</span><input id="poem-search" type="search" autocomplete="off" placeholder="搜索诗名、作者、诗句" /></label>
         </div>
 
+        <button id="print-anthology" type="button" class="anthology-button">打印已发布诗集 / 保存 PDF</button>
         <div id="poem-grid" class="poem-grid" aria-live="polite"></div>
         <p id="no-results" class="no-results" hidden>没有找到符合条件的诗作，试试其他关键词。</p>
       </section>
 
       <section class="about section-shell" id="about" aria-labelledby="about-title">
         <div class="about-number">02 / A NOTE FROM THE ARCHIVE</div>
-        <div class="about-body"><span class="about-glyph" aria-hidden="true">文</span><div><h2 id="about-title">写下的诗，值得被珍藏。</h2><p>诗不必写给远方。它可以是一场春雨、一段旅程，也可以是寻常日子里忽然闪现的心绪。这里将陆续收录那些值得回味的文字，让每一次落笔，都有迹可循。</p><p class="about-footnote">此站目前是第一版展示样站，尚未开放正式投稿与个人作品管理。</p></div></div>
+        <div class="about-body"><span class="about-glyph" aria-hidden="true">文</span><div><h2 id="about-title">写下的诗，值得被珍藏。</h2><p>诗不必写给远方。它可以是一场春雨、一段旅程，也可以是寻常日子里忽然闪现的心绪。这里将陆续收录那些值得回味的文字，让每一次落笔，都有迹可循。</p><p class="about-footnote">这里只陈列已公开发布的诗作，未发布的草稿仅作者可见。</p></div></div>
       </section>
     </div>
 
@@ -78,18 +84,80 @@
         <h1 id="reader-title"></h1>
         <p class="reader-author" id="reader-author"></p>
         <div class="reader-poem" id="reader-poem"></div>
+        <img id="reader-cover" class="reader-cover" alt="诗作配图" hidden />
         <div class="reader-rule" aria-hidden="true"><span>✦</span></div>
         <p class="reader-note" id="reader-note"></p>
         <div class="reader-actions">
           <button type="button" id="share-poem">分享这首诗 ↗</button>
+          <button type="button" id="export-poem-image">生成分享诗卡</button>
           <button type="button" id="print-poem">打印 / 保存为 PDF</button>
         </div>
         <p class="reader-feedback" id="reader-feedback" role="status" aria-live="polite"></p>
+        <div id="share-image-preview" class="share-image-preview" hidden>
+          <p>长按图片保存，随后可发送到微信。图片不会上传至服务器。</p>
+          <img id="share-image-output" alt="当前诗作生成的图片诗卡" />
+        </div>
+        <div id="share-manual" class="share-manual" hidden>
+          <label for="share-manual-url">如微信无法直接分享，请长按或选中并复制链接：</label>
+          <input id="share-manual-url" type="text" readonly aria-label="作品分享链接" />
+          <button id="share-manual-select" type="button">选中链接</button>
+        </div>
       </div>
-      <p class="reader-demo-label">古典诗词演示内容 · 非个人原创作品</p>
+      <p id="reader-demo-label" class="reader-demo-label">古典诗词演示内容 · 非个人原创作品</p>
     </section>
+  
+    <section id="admin-view" class="admin-view section-shell" hidden aria-labelledby="admin-title">
+      <a href="#gallery" class="back-link">← 返回诗作</a>
+      <div class="admin-heading">
+        <p class="eyebrow dark-eyebrow">PRIVATE WORKSPACE</p>
+        <h1 id="admin-title">诗作管理</h1>
+        <p>仅限管理员登录。草稿不会展示在公开诗集中。</p>
+      </div>
+      <p id="admin-status" role="status" aria-live="polite">正在连接后台…</p>
+      <div id="login-form" class="admin-panel" hidden>
+        <h2>管理功能暂未开放</h2>
+        <p>正在准备手机通行密钥（Passkey）登录。首次安全绑定完成后，可使用手机指纹、面容识别或设备解锁进入。</p>
+        <p>公开诗集、搜索、阅读、分享及打印功能可以正常使用。未配置管理员身份前，所有写入接口均保持关闭。</p>
+      </div>
+      <div id="admin-workspace" hidden>
+        <div class="admin-toolbar">
+          <button type="button" id="new-poem" class="admin-primary">＋ 新建诗作</button>
+          <button type="button" id="export-backup" class="admin-secondary">导出完整备份</button>
+          <button type="button" id="sign-out" class="admin-secondary">退出登录</button>
+        </div>
+        <div class="admin-layout">
+          <div class="admin-panel">
+            <h2>我的作品</h2>
+            <div id="admin-list" class="admin-list"></div>
+          </div>
+          <form id="poem-form" class="admin-panel admin-editor">
+            <h2 id="editor-heading">新建诗作</h2>
+            <label>标题<input name="title" maxlength="120" required placeholder="输入诗名" /></label>
+            <label>正文<textarea name="body" rows="12" required placeholder="写下诗句，换行会保留"></textarea></label>
+            <div class="admin-fields">
+              <label>体裁<select name="genre"><option>五言</option><option>七言</option><option>词</option><option>其他</option></select></label>
+              <label>创作日期（可选）<input name="composed_on" type="date" /></label>
+            </div>
+            <label>附记（可选）<textarea name="note" rows="3" placeholder="写给这首诗的说明"></textarea></label>
+            <div class="admin-cover">
+              <label>配图（保存草稿后可上传）<input id="cover-upload" type="file" accept="image/*" /></label><p>自动压缩为 JPEG（550 KB 内），暂不需要额外购买图片存储服务。</p>
+              <button type="button" class="admin-secondary" id="upload-cover">上传配图</button>
+              <img id="admin-cover-preview" alt="当前配图" hidden />
+            </div>
+            <p id="editor-state" class="admin-hint"></p>
+            <div class="admin-actions">
+              <button type="submit" class="admin-secondary" data-save-status="draft">保存草稿 / 撤回发布</button>
+              <button type="submit" class="admin-primary" data-save-status="published">发布作品</button>
+              <button type="button" class="admin-danger" id="delete-poem" hidden>删除作品</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <p id="admin-feedback" role="status" aria-live="polite"></p>
+    </section>
+    <section id="anthology-print" aria-label="诗集打印版" hidden></section>
   </main>
 
-  <footer class="site-footer"><div class="footer-inner"><span class="footer-brand">诗词馆 <i>·</i> 岁月有诗</span><span>一字一句，皆有来处。 <span class="footer-year">© <span id="year"></span></span></span></div></footer>
+  <footer class="site-footer"><div class="footer-inner"><span class="footer-brand">诗词馆 <i>·</i> 岁月有诗</span><a href="#admin" class="footer-admin">管理入口</a><span>一字一句，皆有来处。 <span class="footer-year">© <span id="year"></span></span></span></div></footer>
 </body>
 </html>

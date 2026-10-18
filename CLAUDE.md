@@ -1,10 +1,5 @@
-# Claude Code — read before doing anything
+# Claude Code — Poetry Gallery ONLY
 
-**This workspace is ONLY for `tasconyeric-slack/Poetry_Gallery`.**
-The existing Vercel project is **`tasconyeric-slack/shici-archive`**. Never create or edit any other project.
+Repository: tasconyeric-slack/Poetry_Gallery. Branch feat/poetry-publishing-mvp, existing draft PR #1. Existing Vercel shici-archive; shici.byliyz.com already linked. Do NOT change unrelated projects or DNS.
 
-Read `AGENTS.md`, `docs/MVP_SPEC.md`, and `README.md`.
-
-Your task is **implementation, not another planning exercise**. First verify `git remote -v` and the branch, then write code, test real functionality, and commit changes. Use small, verifiable milestones. If Supabase/account setup needs a person, give exactly the required step, keep shipping unblocked code, and never fabricate credentials.
-
-No custom domain until owner asks. Do not connect unrelated repos. Do not add paid SMS or speculative enterprise infrastructure. Show precise commit SHA, PR URL, Vercel deployment status and tested URL at the end. Never claim tests were run without running them.
+Architecture: isolated Cloudflare D1 + Worker, public published-only gallery. SMS is abandoned. Owner login is deferred WebAuthn Passkey with restricted first enrollment and recovery. Never allow anonymous writes, and never claim login verified until implemented. Continue non-login features/test coverage per README and docs/CODEX_TASK.md. No merge without explicit approval.
