@@ -32,4 +32,6 @@ for (const required of [/alter table public.poems enable row level security/,
 assert.doesNotMatch(client,/service_role|sb_secret_/);
 assert.doesNotMatch(config,/SERVICE_ROLE|sb_secret_/);
 assert.match(config,/SUPABASE_PUBLISHABLE_KEY/);
+assert.match(config,/sb_publishable_/);
+assert.match(read("app.js"),/print-anthology/);
 console.log("MVP structure and static RLS checks passed; real integration requires a dedicated Supabase project.");

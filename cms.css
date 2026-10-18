@@ -35,3 +35,17 @@
 .admin-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
 @media(max-width:720px){.admin-layout{grid-template-columns:1fr}.admin-view{padding-top:25px}.admin-panel{padding:19px}.admin-fields{grid-template-columns:1fr}.admin-toolbar{flex-wrap:wrap}.footer-admin{margin-left:0}.admin-actions button{flex:1 1 130px}}
 @media print{#admin-view,.collection-status,.footer-admin{display:none!important}.reader-cover{max-height:150mm;break-inside:avoid}}
+
+.anthology-button{display:inline-block;border:1px solid var(--dark);background:transparent;color:var(--dark);padding:11px 16px;margin:0 0 20px;font-size:12px}
+.anthology-button:hover{background:var(--dark);color:white}
+#anthology-print{display:none}
+@media print{
+  body.print-anthology #reading-view{display:none!important}
+  body.print-anthology #anthology-print{display:block!important;font-family:var(--serif);color:#222}
+  body.print-anthology #anthology-print h1{text-align:center;font-size:25pt;margin:0 0 20mm}
+  body.print-anthology #anthology-print article{break-after:page;page-break-after:always;text-align:center;padding-top:20mm}
+  body.print-anthology #anthology-print article:last-child{break-after:auto;page-break-after:auto}
+  body.print-anthology #anthology-print h2{font-size:22pt;font-weight:500}
+  body.print-anthology #anthology-print .anthology-body{white-space:pre-line;font-size:16pt;line-height:2.2;margin:18mm 0}
+  body.print-anthology #anthology-print article p{font-size:11pt;line-height:1.8}
+}

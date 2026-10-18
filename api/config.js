@@ -4,7 +4,7 @@ module.exports = function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
   const url = process.env.SUPABASE_URL || "";
   const key = process.env.SUPABASE_PUBLISHABLE_KEY || "";
-  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url) || !key) {
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url) || !key.startsWith("sb_publishable_")) {
     return res.status(200).json({ configured: false });
   }
   return res.status(200).json({ configured: true, url, key });

@@ -66,6 +66,7 @@
           <label class="search-wrap"><span class="sr-only">搜索诗名或作者</span><span aria-hidden="true">⌕</span><input id="poem-search" type="search" autocomplete="off" placeholder="搜索诗名、作者、诗句" /></label>
         </div>
 
+        <button id="print-anthology" type="button" class="anthology-button">打印已发布诗集 / 保存 PDF</button>
         <div id="poem-grid" class="poem-grid" aria-live="polite"></div>
         <p id="no-results" class="no-results" hidden>没有找到符合条件的诗作，试试其他关键词。</p>
       </section>
@@ -143,6 +144,7 @@
       </div>
       <p id="admin-feedback" role="status" aria-live="polite"></p>
     </section>
+    <section id="anthology-print" aria-label="诗集打印版" hidden></section>
   </main>
 
   <footer class="site-footer"><div class="footer-inner"><span class="footer-brand">诗词馆 <i>·</i> 岁月有诗</span><a href="#admin" class="footer-admin">管理入口</a><span>一字一句，皆有来处。 <span class="footer-year">© <span id="year"></span></span></span></div></footer>

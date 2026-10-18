@@ -158,6 +158,31 @@ document.getElementById("share-poem").addEventListener("click", async () => {
 document.getElementById("print-poem").addEventListener("click", () => window.print());
 document.getElementById("year").textContent = String(new Date().getFullYear());
 window.addEventListener("hashchange", renderRoute);
+// Simple print anthology of published works; all user text is inserted as textContent.
+const printBook = document.getElementById("anthology-print");
+document.getElementById("print-anthology").addEventListener("click", () => {
+  if (!poems.length) return window.alert("暂无可打印的已发布作品。");
+  printBook.replaceChildren();
+  const heading = document.createElement("h1");
+  heading.textContent = "诗词馆 · 诗作选集";
+  printBook.append(heading);
+  for (const poem of poems) {
+    const article = document.createElement("article");
+    const title = document.createElement("h2");
+    title.textContent = poem.title;
+    const content = document.createElement("div");
+    content.className = "anthology-body";
+    content.textContent = poem.lines.join("\n");
+    const note = document.createElement("p");
+    note.textContent = poem.note || "";
+    article.append(title, content, note);
+    printBook.append(article);
+  }
+  document.body.classList.add("print-anthology");
+  window.print();
+});
+window.addEventListener("afterprint", () => document.body.classList.remove("print-anthology"));
+
 window.poetryGallery = {
   setPublished(items, isDemo) {
     poems = items;
