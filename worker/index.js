@@ -72,6 +72,14 @@ async function handler(request,env) {
       const {results}=await env.DB.prepare("SELECT * FROM poems ORDER BY updated_at DESC").all();
       return json({poems:results});
     }
+    if(op==="backup"){
+      if(!await isOwner(request,env))return error("Unauthorized",401);
+      const [{results:poems},{results:covers}]=await Promise.all([
+        env.DB.prepare("SELECT * FROM poems ORDER BY created_at ASC").all(),
+        env.DB.prepare("SELECT id,poem_id,media_type,base64,created_at FROM covers ORDER BY created_at ASC").all()
+      ]);
+      return json({format:"poetry-gallery-backup-v1",exported_at:new Date().toISOString(),poems,covers});
+    }
     if(op==="cover") {
       const id=url.searchParams.get("id")||"";
       if(!/^[a-f0-9-]{36}$/.test(id))return error("Not found",404);

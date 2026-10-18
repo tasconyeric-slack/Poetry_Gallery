@@ -36,7 +36,7 @@ assert.equal((await r.json()).poem.body,"第一行\n第二行");
 r=await call("detail&id="+id2);assert.equal(r.status,404);
 r=await call("cover&id="+img1);assert.equal(r.status,200);
 r=await call("cover&id="+img2);assert.equal(r.status,404);
-for(const op of ["owner-list","session"])assert.equal((await call(op)).status,403);
+for(const op of ["owner-list","session","backup"])assert.equal((await call(op)).status,403);
 for(const op of ["save","delete","upload","verify"])
   assert.equal((await call(op,"POST",{id:id1,title:"unauthorized"})).status,403);
 r=await call("list","OPTIONS");assert.equal(r.status,204);

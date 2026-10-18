@@ -45,3 +45,6 @@ Commands:
 Tests cover public responses, draft exclusion, private cover denial, anonymous write denial and CORS, but the owner CRUD flow is not live-tested until authentication is implemented. Verify mobile at 375px, actual WeChat sharing and print behavior in browsers separately.
 
 Never touch other projects, Vercel deployments, Supabase databases, or unrelated Cloudflare resources. Work stays on feature branch feat/poetry-publishing-mvp / draft PR #1; do not merge without owner approval.
+## Full owner backup (after Passkey is enabled)
+
+The locked owner workspace includes an export button. It downloads a JSON snapshot with poem text, drafts, timestamps and compressed cover bytes. The Worker backup endpoint requires the owner session and server-side gateway key; it is never anonymous. Keep downloaded backups private. Restoring data remains a separately reviewed future feature.

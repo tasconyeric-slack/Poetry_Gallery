@@ -65,6 +65,13 @@ assert.equal(response.status,200);
 const coverId=(await response.json()).cover_id;
 response=await send("cover","GET",undefined,false,"&id="+coverId);
 assert.equal(response.status,404,"draft image stays private");
+response=await send("backup","GET",undefined,true);
+assert.equal(response.status,200);
+const archive=await response.json();
+assert.equal(archive.format,"poetry-gallery-backup-v1");
+assert.equal(archive.poems.length,1);
+assert.equal(archive.covers.length,1);
+assert.equal(archive.covers[0].base64,sampleJpeg);
 response=await send("save","POST",{id,title:"山中秋日·修订",body:"新的第一句\n新的第二句",
   genre:"五言",note:"编辑成功",status:"published"},true);
 assert.equal(response.status,200);

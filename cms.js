@@ -73,6 +73,24 @@ function openPoem(id){
   if(p.cover_id)$("admin-cover-preview").src=image(p.cover_id);
   else $("admin-cover-preview").removeAttribute("src");
 }
+$("export-backup").addEventListener("click",async()=>{
+  if(!isAdmin)return feedback("请先完成管理员验证。");
+  const button=$("export-backup");button.disabled=true;
+  try{
+    const snapshot=await api("backup");
+    if(snapshot.format!=="poetry-gallery-backup-v1"||
+      !Array.isArray(snapshot.poems)||!Array.isArray(snapshot.covers))
+      throw Error("备份文件格式不正确");
+    const blob=new Blob([JSON.stringify(snapshot,null,2)],{type:"application/json"});
+    const href=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=href;a.download="poetry-gallery-backup-"+new Date().toISOString().slice(0,10)+".json";
+    document.body.append(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(href),1000);
+    feedback("备份已导出，请保存在安全位置。文件可能包含未发布诗作及私有照片。");
+  }catch(error){feedback("备份失败："+error.message);}
+  finally{button.disabled=false;}
+});
 $("sign-out").addEventListener("click",async()=>{
   try{await api("logout",{});isAdmin=false;resetEditor();await refreshOwner();feedback("已退出登录。");}
   catch(e){feedback(e.message);}
