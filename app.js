@@ -164,18 +164,22 @@ document.getElementById("print-anthology").addEventListener("click", () => {
   if (!poems.length) return window.alert("暂无可打印的已发布作品。");
   printBook.replaceChildren();
   const heading = document.createElement("h1");
-  heading.textContent = "诗词馆 · 诗作选集";
+  heading.textContent = poems.some(p => p.demo !== false)
+    ? "古典诗词示例 · 演示诗集" : "诗词馆 · 已发布诗作选集";
   printBook.append(heading);
   for (const poem of poems) {
     const article = document.createElement("article");
     const title = document.createElement("h2");
     title.textContent = poem.title;
+    const author = document.createElement("p");
+    author.textContent = poem.dynasty + " · " + poem.author +
+      (poem.demo === false ? "" : " · 演示内容");
     const content = document.createElement("div");
     content.className = "anthology-body";
     content.textContent = poem.lines.join("\n");
     const note = document.createElement("p");
     note.textContent = poem.note || "";
-    article.append(title, content, note);
+    article.append(title, author, content, note);
     printBook.append(article);
   }
   document.body.classList.add("print-anthology");
