@@ -1,5 +1,35 @@
 # IMPLEMENTATION TASK — Poetry Gallery functional MVP
 
+## HANDOFF — current state as of 2026-10-18
+
+**Do not restart or duplicate completed implementation.** The feature branch
+`feat/poetry-publishing-mvp` and PR #1 already exist in this exact repository:
+https://github.com/tasconyeric-slack/Poetry_Gallery/pull/1
+
+That PR contains the Supabase schema/RLS, private covers, owner password/Magic Link
+sign-in, management CRUD, live public gallery adapter, print anthology, WeChat
+selectable-link fallback and passing GitHub Actions checks. It auto-deploys to
+the EXISTING `shici-archive` Vercel Preview (GitHub/Vercel report success).
+
+**Your next task is to inspect/review and complete this existing PR, not create
+another branch or produce a new architecture plan.**
+
+Supabase live integration is currently BLOCKED: there is no Poetry Gallery
+Supabase instance, and the linked account already shows two active projects.
+Supabase Free limits owners/admins to two active free projects in total.
+Do not repurpose, pause, delete, query or alter unrelated projects.
+Vercel direct management access currently responds 403, even though GitHub
+reports the correct project's Preview deployment as successful.
+
+Once the owner has provisioned a **new dedicated** backend within their quota
+and authorized correct Vercel scope, perform real authenticated CRUD, RLS
+negative tests, storage, 375px/desktop browser and WeChat share tests. Fix
+any actual defects on the existing branch; never merge without owner approval.
+Use README for the exact setup requirements. If still blocked, report precisely
+what was tested and what remains untested, without claiming C2 completion.
+
+---
+
 You are the implementer, not the project planner. Start coding in this session. Do not respond with only analysis, an architecture proposal, or a task list.
 
 ## Exact targets — mandatory
