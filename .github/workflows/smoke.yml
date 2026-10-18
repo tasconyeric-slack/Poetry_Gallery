@@ -25,5 +25,7 @@ jobs:
         run: node scripts/mvp-check.mjs
       - name: Cloudflare public-read and security behavior tests
         run: node scripts/worker.test.mjs
+      - name: Live deployed Cloudflare Worker HTTP smoke
+        run: node scripts/live-smoke.mjs
       - name: Vercel config and origin checks
         run: node scripts/config.test.mjs
