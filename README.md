@@ -48,3 +48,7 @@ Never touch other projects, Vercel deployments, Supabase databases, or unrelated
 ## Full owner backup (after Passkey is enabled)
 
 The locked owner workspace includes an export button. It downloads a JSON snapshot with poem text, drafts, timestamps and compressed cover bytes. The Worker backup endpoint requires the owner session and server-side gateway key; it is never anonymous. Keep downloaded backups private. Restoring data remains a separately reviewed future feature.
+
+## WeChat-friendly poem image
+
+Each poem detail includes **生成分享诗卡**. The browser draws a full Chinese poetry card locally on a Canvas and shows a PNG preview that readers can long-press to save and send in WeChat. This does not use a paid API or upload the artwork. Very long poems are directed to link sharing or printable PDF instead of being silently truncated.

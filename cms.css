@@ -60,3 +60,8 @@
 
 /* Pending Passkey setup is explicit; the admin editor stays hidden. */
 #login-form p{max-width:56ch;font-size:14px;line-height:2.15}
+
+.share-image-preview{max-width:580px;margin:22px auto 0;text-align:center;border:1px solid var(--line);padding:16px;background:var(--paper-light)}
+.share-image-preview p{font-size:12px;color:var(--muted);line-height:1.8}
+.share-image-preview img{display:block;width:100%;height:auto;margin-top:10px;object-fit:contain}
+@media print{.share-image-preview{display:none!important}}

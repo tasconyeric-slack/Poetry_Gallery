@@ -89,9 +89,14 @@
         <p class="reader-note" id="reader-note"></p>
         <div class="reader-actions">
           <button type="button" id="share-poem">分享这首诗 ↗</button>
+          <button type="button" id="export-poem-image">生成分享诗卡</button>
           <button type="button" id="print-poem">打印 / 保存为 PDF</button>
         </div>
         <p class="reader-feedback" id="reader-feedback" role="status" aria-live="polite"></p>
+        <div id="share-image-preview" class="share-image-preview" hidden>
+          <p>长按图片保存，随后可发送到微信。图片不会上传至服务器。</p>
+          <img id="share-image-output" alt="当前诗作生成的图片诗卡" />
+        </div>
         <div id="share-manual" class="share-manual" hidden>
           <label for="share-manual-url">如微信无法直接分享，请长按或选中并复制链接：</label>
           <input id="share-manual-url" type="text" readonly aria-label="作品分享链接" />

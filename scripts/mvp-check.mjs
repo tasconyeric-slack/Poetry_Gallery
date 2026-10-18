@@ -13,5 +13,8 @@ for(const stale of ["sendTencentSms","TENCENT_SECRET_KEY","OWNER_PHONE","OTP_PEP
 assert.match(client,/PUBLIC_API/);
 assert.match(client,/showExamples/);
 assert.match(html,/通行密钥/);
+assert.match(html,/id="export-poem-image"/);
+assert.match(read("app.js"),/canvas.toBlob/);
+assert.ok(!read("worker\/migrations\/0001_poems.sql").includes("sms_requests"));
 assert.match(read("wrangler.toml"),/poetry-gallery-d1/);
 console.log("Published gallery structure and disabled admin checks passed.");

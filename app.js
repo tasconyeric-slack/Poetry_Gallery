@@ -86,6 +86,7 @@ function renderReading(poem) {
   document.getElementById("reader-demo-label").hidden = poem.demo === false;
   feedback.textContent = "";
   document.getElementById("share-manual").hidden = true;
+  document.getElementById("share-image-preview").hidden = true;
   document.title = `${poem.title} · 诗词馆`;
 }
 
@@ -134,6 +135,79 @@ search.addEventListener("input", renderGrid);
 document.getElementById("back-to-gallery").addEventListener("click", () => { location.hash = "gallery"; });
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && activePoem) location.hash = "gallery";
+});
+
+// Generate a self-contained, text-only image. Do not draw cross-origin covers
+// to the canvas, so the image remains exportable and unpublished text is never uploaded.
+let previousShareImageUrl = null;
+document.getElementById("export-poem-image").addEventListener("click", async () => {
+  if (!activePoem) return;
+  const contentLines = activePoem.lines.flatMap(raw => {
+    const chars = Array.from(raw);
+    if (!chars.length) return [""];
+    const chunks = [];
+    for (let i = 0; i < chars.length; i += 17) {
+      chunks.push(chars.slice(i, i + 17).join(""));
+    }
+    return chunks;
+  });
+  if (contentLines.length > 34) {
+    feedback.textContent = "这首诗篇幅较长，请使用链接分享或打印成 PDF。";
+    return;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = 900;
+  canvas.height = Math.max(1250, 480 + contentLines.length * 66 + 220);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    feedback.textContent = "当前浏览器不支持图片导出。";
+    return;
+  }
+  const paper = "#f7f5ef", ink = "#374239", accent = "#93654e";
+  ctx.fillStyle = paper;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "#d9d3c9";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(40, 40, 820, canvas.height - 80);
+  ctx.textAlign = "center";
+  ctx.fillStyle = accent;
+  ctx.font = "24px serif";
+  ctx.fillText("诗 词 馆  ·  岁 月 成 章", 450, 112);
+  ctx.fillStyle = ink;
+  ctx.font = '600 58px "Songti SC","Noto Serif CJK SC",serif';
+  ctx.fillText(activePoem.title.slice(0, 25), 450, 225, 760);
+  ctx.font = "26px serif";
+  ctx.fillStyle = "#808579";
+  ctx.fillText((activePoem.dynasty + " · " + activePoem.author).slice(0, 40), 450, 284, 760);
+  ctx.strokeStyle = "#bfae98";
+  ctx.beginPath();
+  ctx.moveTo(330, 327);
+  ctx.lineTo(570, 327);
+  ctx.stroke();
+  ctx.fillStyle = ink;
+  ctx.font = '36px "Songti SC","Noto Serif CJK SC",serif';
+  contentLines.forEach((line, index) => {
+    ctx.fillText(line, 450, 406 + index * 66, 750);
+  });
+  ctx.fillStyle = accent;
+  ctx.font = "23px serif";
+  ctx.fillText("一字一句，皆有来处。", 450, canvas.height - 146);
+  ctx.fillStyle = "#999b94";
+  ctx.font = "20px sans-serif";
+  ctx.fillText("shici.byliyz.com", 450, canvas.height - 100);
+  try {
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw Error("生成失败");
+    if (previousShareImageUrl) URL.revokeObjectURL(previousShareImageUrl);
+    const imageUrl = URL.createObjectURL(blob);
+    previousShareImageUrl = imageUrl;
+    document.getElementById("share-image-output").src = imageUrl;
+    document.getElementById("share-image-preview").hidden = false;
+    feedback.textContent = "诗卡已生成。可长按下方图片保存后发送到微信。";
+    document.getElementById("share-image-preview").scrollIntoView({behavior:"smooth",block:"nearest"});
+  } catch {
+    feedback.textContent = "图片生成失败，请改用链接分享。";
+  }
 });
 
 function showManualShare(url) {
