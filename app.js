@@ -31,6 +31,7 @@ let poems = [
   }
 ];
 
+const demoPoems = poems.slice();
 const catalog = document.getElementById("catalog-view");
 const reading = document.getElementById("reading-view");
 const grid = document.getElementById("poem-grid");
@@ -177,6 +178,7 @@ const printBook = document.getElementById("anthology-print");
 document.getElementById("print-anthology").addEventListener("click", () => {
   if (!poems.length) return window.alert("暂无可打印的已发布作品。");
   printBook.replaceChildren();
+  printBook.hidden = false;
   const heading = document.createElement("h1");
   heading.textContent = poems.some(p => p.demo !== false)
     ? "古典诗词示例 · 演示诗集" : "诗词馆 · 已发布诗作选集";
@@ -199,9 +201,18 @@ document.getElementById("print-anthology").addEventListener("click", () => {
   document.body.classList.add("print-anthology");
   window.print();
 });
-window.addEventListener("afterprint", () => document.body.classList.remove("print-anthology"));
+window.addEventListener("afterprint", () => {
+  document.body.classList.remove("print-anthology");
+  printBook.hidden = true;
+});
 
 window.poetryGallery = {
+  showExamples() {
+    poems=demoPoems;
+    document.getElementById("demo-notice").hidden=false;
+    renderGrid();
+    renderRoute();
+  },
   setPublished(items, isDemo) {
     poems = items;
     document.getElementById("demo-notice").hidden = !isDemo;

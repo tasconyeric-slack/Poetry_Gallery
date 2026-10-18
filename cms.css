@@ -57,3 +57,6 @@
 
 #login-form button{margin:5px 10px 18px 0}
 #login-form input[type=tel],#login-form input[name=code]{font-size:18px;letter-spacing:.04em}
+
+/* Pending Passkey setup is explicit; the admin editor stays hidden. */
+#login-form p{max-width:56ch;font-size:14px;line-height:2.15}

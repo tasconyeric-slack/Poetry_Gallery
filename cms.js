@@ -1,5 +1,6 @@
-// Poetry Gallery: D1 phone-SMS client. No Supabase/browser-held secrets.
+// Poetry Gallery: read-only public D1 now; protected editor awaits Passkey enrollment.
 const $=id=>document.getElementById(id),form=$("poem-form");
+const PUBLIC_API="https://poetry-gallery-api.tasconyeric.workers.dev";
 let ownPoems=[],activeId=null,isAdmin=false;
 const feedback=msg=>{$("admin-feedback").textContent=msg;};
 const status=msg=>{$("admin-status").textContent=msg;};
@@ -14,7 +15,14 @@ async function api(op,body,extras=""){
     throw Error(error.error||"HTTP "+res.status);}
   return res.json();
 }
-const image=id=>id?"/api/poetry?op=cover&id="+encodeURIComponent(id):null;
+async function publicApi(op,extra=""){
+  const response=await fetch(PUBLIC_API+"/?op="+encodeURIComponent(op)+extra,{
+    method:"GET",mode:"cors",credentials:"omit",cache:"no-store"
+  });
+  if(!response.ok)throw Error("Public archive unavailable ("+response.status+")");
+  return response.json();
+}
+const image=id=>id?PUBLIC_API+"/?op=cover&id="+encodeURIComponent(id):null;
 function resetEditor(){
   activeId=null;form.reset();$("editor-heading").textContent="新建诗作";
   $("editor-state").textContent="先保存草稿，再上传配图。";
@@ -24,10 +32,20 @@ function resetEditor(){
 function forGallery(p){return {id:p.id,title:p.title,author:"诗词馆",dynasty:"原创",
   genre:p.genre,lines:p.body.split("\n"),note:p.note||"",coverUrl:image(p.cover_id),demo:false};}
 async function refreshGallery(){
-  try{const result=await api("list");window.poetryGallery.setPublished((result.poems||[]).map(forGallery),false);
-    window.poetryGallery.setStatus("");}
-  catch{window.poetryGallery.setPublished([],false);
-    window.poetryGallery.setStatus("诗集暂时无法读取，请刷新重试。");}
+  try{
+    const result=await publicApi("list");
+    const published=(result.poems||[]).map(forGallery);
+    if(published.length){
+      window.poetryGallery.setPublished(published,false);
+      window.poetryGallery.setStatus("");
+    }else{
+      window.poetryGallery.showExamples();
+      window.poetryGallery.setStatus("目前尚无已发布的原创诗作。以下展示古典诗词版式示例。");
+    }
+  }catch{
+    window.poetryGallery.showExamples();
+    window.poetryGallery.setStatus("原创诗集暂时无法连接，当前仅显示古典诗词演示。");
+  }
 }
 async function refreshOwner(){
   const result=await api("session");isAdmin=Boolean(result.owner);
@@ -55,23 +73,6 @@ function openPoem(id){
   if(p.cover_id)$("admin-cover-preview").src=image(p.cover_id);
   else $("admin-cover-preview").removeAttribute("src");
 }
-const auth=$("login-form");
-$("send-code").addEventListener("click",async()=>{
-  const phone=auth.elements.namedItem("phone");
-  if(!phone.checkValidity())return feedback("请输入完整手机号，例如 +8613800000000。");
-  const b=$("send-code");b.disabled=true;
-  try{await api("send",{phone:phone.value.trim()});feedback("验证码已发送，5 分钟内有效。");}
-  catch(e){feedback("发送失败："+e.message);}finally{b.disabled=false;}
-});
-auth.addEventListener("submit",async e=>{
-  e.preventDefault();const b=auth.querySelector('button[type="submit"]');b.disabled=true;
-  try{
-    await api("verify",{phone:auth.elements.namedItem("phone").value.trim(),
-      code:auth.elements.namedItem("code").value.trim()});
-    auth.elements.namedItem("code").value="";
-    await refreshOwner();feedback("已登录，60 天内无需再次获取短信。");
-  }catch(e){feedback("验证失败："+e.message);}finally{b.disabled=false;}
-});
 $("sign-out").addEventListener("click",async()=>{
   try{await api("logout",{});isAdmin=false;resetEditor();await refreshOwner();feedback("已退出登录。");}
   catch(e){feedback(e.message);}
@@ -130,17 +131,12 @@ $("upload-cover").addEventListener("click",async()=>{
 });
 async function initialize(){
   resetEditor();
-  try{
-    const resp=await fetch("/api/config",{cache:"no-store"});
-    if(!resp.ok)throw Error("unavailable");
-    const config=await resp.json();
-    if(!config.configured){status("后台未连接，当前是古典诗词演示模式。");return;}
-    await refreshGallery();await refreshOwner();
-    document.addEventListener("visibilitychange",()=>{if(!document.hidden)void refreshGallery();});
-  }catch{
-    status("数据服务暂不可用。");
-    window.poetryGallery.setPublished([],false);
-    window.poetryGallery.setStatus("数据服务暂不可用。");
-  }
+  $("login-form").hidden=false;
+  $("admin-workspace").hidden=true;
+  status("管理登录即将改用手机通行密钥（Passkey）。目前管理功能尚未开放，绝不允许匿名编辑。");
+  await refreshGallery();
+  document.addEventListener("visibilitychange",()=>{
+    if(!document.hidden)void refreshGallery();
+  });
 }
 void initialize();

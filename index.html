@@ -109,19 +109,11 @@
         <p>仅限管理员登录。草稿不会展示在公开诗集中。</p>
       </div>
       <p id="admin-status" role="status" aria-live="polite">正在连接后台…</p>
-      <form id="login-form" class="admin-panel" hidden>
-        <label>管理员手机号（含国家代码）
-          <input name="phone" type="tel" inputmode="tel" autocomplete="tel" pattern="\+[1-9][0-9]{7,14}"
-                 value="+86" required placeholder="+8613800000000" />
-        </label>
-        <button type="button" id="send-code" class="admin-secondary">获取短信验证码</button>
-        <label>六位验证码
-          <input name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
-                 pattern="[0-9]{6}" maxlength="6" required placeholder="请输入验证码" />
-        </label>
-        <button type="submit" class="admin-primary">验证并登录</button>
-        <p>已授权的手机号验证一次后，本设备可保持登录 60 天。</p>
-      </form>
+      <div id="login-form" class="admin-panel" hidden>
+        <h2>管理功能暂未开放</h2>
+        <p>正在准备手机通行密钥（Passkey）登录。首次安全绑定完成后，可使用手机指纹、面容识别或设备解锁进入。</p>
+        <p>公开诗集、搜索、阅读、分享及打印功能可以正常使用。未配置管理员身份前，所有写入接口均保持关闭。</p>
+      </div>
       <div id="admin-workspace" hidden>
         <div class="admin-toolbar">
           <button type="button" id="new-poem" class="admin-primary">＋ 新建诗作</button>
