@@ -1,0 +1,22 @@
+# Operating system and editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Runtime, builds and testing
+node_modules/
+.next/
+dist/
+out/
+coverage/
+playwright-report/
+test-results/
+.vercel/
+
+# Local private settings and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
