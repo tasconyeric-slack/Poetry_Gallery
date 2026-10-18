@@ -84,6 +84,7 @@ function renderReading(poem) {
   else cover.removeAttribute("src");
   document.getElementById("reader-demo-label").hidden = poem.demo === false;
   feedback.textContent = "";
+  document.getElementById("share-manual").hidden = true;
   document.title = `${poem.title} · 诗词馆`;
 }
 
@@ -134,6 +135,19 @@ document.addEventListener("keydown", event => {
   if (event.key === "Escape" && activePoem) location.hash = "gallery";
 });
 
+function showManualShare(url) {
+  const area = document.getElementById("share-manual");
+  const input = document.getElementById("share-manual-url");
+  input.value = url;
+  area.hidden = false;
+  input.focus();
+  input.select();
+}
+document.getElementById("share-manual-select").addEventListener("click", () => {
+  const input = document.getElementById("share-manual-url");
+  input.focus();
+  input.select();
+});
 document.getElementById("share-poem").addEventListener("click", async () => {
   if (!activePoem) return;
   const url = location.href;
@@ -146,12 +160,12 @@ document.getElementById("share-poem").addEventListener("click", async () => {
       await navigator.clipboard.writeText(url);
       feedback.textContent = "作品链接已复制，可粘贴到微信发送。";
     } else {
-      window.prompt("请复制下方链接分享：", url);
+      showManualShare(url);
       feedback.textContent = "可复制链接发送给家人。";
     }
   } catch (error) {
     if (error && error.name === "AbortError") return;
-    window.prompt("请复制下方链接分享：", url);
+    showManualShare(url);
     feedback.textContent = "可复制链接发送给家人。";
   }
 });

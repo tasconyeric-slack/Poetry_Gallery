@@ -92,6 +92,11 @@
           <button type="button" id="print-poem">打印 / 保存为 PDF</button>
         </div>
         <p class="reader-feedback" id="reader-feedback" role="status" aria-live="polite"></p>
+        <div id="share-manual" class="share-manual" hidden>
+          <label for="share-manual-url">如微信无法直接分享，请长按或选中并复制链接：</label>
+          <input id="share-manual-url" type="text" readonly aria-label="作品分享链接" />
+          <button id="share-manual-select" type="button">选中链接</button>
+        </div>
       </div>
       <p id="reader-demo-label" class="reader-demo-label">古典诗词演示内容 · 非个人原创作品</p>
     </section>
