@@ -1,7 +1,7 @@
 /* The first release deliberately uses public-domain examples only.
  * Real family poems and persistent editing belong to the authenticated MVP.
  */
-const poems = [
+let poems = [
   {
     id: "jing-ye-si",
     title: "静夜思",
@@ -58,7 +58,7 @@ function cardFor(poem, index) {
   card.append(node("span", "card-author", `${poem.dynasty} · ${poem.author}`));
   card.append(node("div", "card-excerpt", poem.lines.slice(0, 2).join("\n")));
   const foot = node("div", "card-footer");
-  foot.append(node("span", "", "古典诗词 · 演示"), node("span", "card-arrow", "↗"));
+  foot.append(node("span", "", poem.demo === false ? "原创诗作" : "古典诗词 · 演示"), node("span", "card-arrow", "↗"));
   card.append(foot);
   card.addEventListener("click", () => { location.hash = "poem/" + poem.id; });
   return card;
@@ -77,30 +77,43 @@ function renderReading(poem) {
   document.getElementById("reader-author").textContent = `${poem.dynasty} · ${poem.author}`;
   document.getElementById("reader-genre").textContent = `古典诗词 / ${poem.genre}`;
   document.getElementById("reader-poem").textContent = poem.lines.join("\n");
-  document.getElementById("reader-note").textContent = poem.note;
+  document.getElementById("reader-note").textContent = poem.note || "";
+  const cover = document.getElementById("reader-cover");
+  cover.hidden = !poem.coverUrl;
+  if (poem.coverUrl) cover.src = poem.coverUrl;
+  else cover.removeAttribute("src");
+  document.getElementById("reader-demo-label").hidden = poem.demo === false;
   feedback.textContent = "";
   document.title = `${poem.title} · 诗词馆`;
 }
 
 function renderRoute() {
   const route = decodeURIComponent(location.hash.slice(1));
-  const isPoemRoute = route.startsWith("poem/");
-  const poem = isPoemRoute ? poems.find(p => p.id === route.slice(5)) : null;
+  const admin = document.getElementById("admin-view");
+  const isAdmin = route === "admin";
+  const isPoem = route.startsWith("poem/");
+  const poem = isPoem ? poems.find(p => p.id === route.slice(5)) : null;
+  admin.hidden = !isAdmin;
+  catalog.hidden = isAdmin || isPoem;
+  reading.hidden = !isPoem;
+  document.querySelector(".reader-actions").hidden = isPoem && !poem;
   if (poem) {
     activePoem = poem;
     renderReading(poem);
-    catalog.hidden = true;
-    reading.hidden = false;
     window.scrollTo(0, 0);
+  } else if (isPoem) {
+    activePoem = null;
+    document.getElementById("reader-title").textContent = "作品不存在或尚未发布";
+    document.getElementById("reader-author").textContent = "";
+    document.getElementById("reader-genre").textContent = "";
+    document.getElementById("reader-poem").textContent = "";
+    document.getElementById("reader-note").textContent = "请返回诗集查看已公开的作品。";
+    document.getElementById("reader-cover").hidden = true;
+    document.getElementById("reader-demo-label").hidden = true;
+    document.title = "未找到作品 · 诗词馆";
   } else {
     activePoem = null;
-    catalog.hidden = false;
-    reading.hidden = true;
-    document.title = "诗词馆 · 把岁月写成诗";
-    if (isPoemRoute) {
-      feedback.textContent = "未找到这首诗。";
-      location.replace("#gallery");
-    }
+    document.title = isAdmin ? "诗作管理 · 诗词馆" : "诗词馆 · 把岁月写成诗";
   }
 }
 
@@ -145,5 +158,20 @@ document.getElementById("share-poem").addEventListener("click", async () => {
 document.getElementById("print-poem").addEventListener("click", () => window.print());
 document.getElementById("year").textContent = String(new Date().getFullYear());
 window.addEventListener("hashchange", renderRoute);
+window.poetryGallery = {
+  setPublished(items, isDemo) {
+    poems = items;
+    document.getElementById("demo-notice").hidden = !isDemo;
+    document.getElementById("no-results").textContent = items.length
+      ? "没有找到符合条件的诗作，试试其他关键词。" : "暂无已发布的诗作。";
+    renderGrid();
+    renderRoute();
+  },
+  setStatus(message) {
+    const status = document.getElementById("collection-status");
+    status.hidden = !message;
+    status.textContent = message || "";
+  }
+};
 renderGrid();
 renderRoute();
