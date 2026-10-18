@@ -25,6 +25,8 @@ jobs:
         run: node scripts/mvp-check.mjs
       - name: Cloudflare public-read and security behavior tests
         run: node scripts/worker.test.mjs
+      - name: D1 SQLite simulated-owner end-to-end CRUD and private images
+        run: node scripts/d1-lifecycle.test.mjs
       - name: Live deployed Cloudflare Worker HTTP smoke
         run: node scripts/live-smoke.mjs
       - name: Vercel config and origin checks
