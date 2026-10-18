@@ -106,8 +106,10 @@
       <p id="admin-status" role="status" aria-live="polite">正在连接后台…</p>
       <form id="login-form" class="admin-panel" hidden>
         <label>管理员邮箱<input name="email" type="email" autocomplete="email" required placeholder="请输入预先授权的邮箱" /></label>
-        <button type="submit" class="admin-primary">发送登录邮件</button>
-        <p>登录链接将发送至管理员邮箱，无需手机号或密码。</p>
+        <label>登录密码<input name="password" type="password" autocomplete="current-password" required placeholder="输入管理员密码" /></label>
+        <button type="submit" class="admin-primary">使用密码登录</button>
+        <button type="button" class="admin-secondary" id="send-magic-link">邮箱登录链接（可选）</button>
+        <p>默认使用邮箱＋密码，无需付费短信或邮件服务。邮箱登录链接需要预先配置邮件发送权限。</p>
       </form>
       <div id="admin-workspace" hidden>
         <div class="admin-toolbar">

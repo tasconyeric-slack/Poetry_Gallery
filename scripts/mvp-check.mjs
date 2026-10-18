@@ -13,7 +13,7 @@ for (const id of ["admin-view","login-form","admin-workspace","poem-form","cover
   "reader-cover","admin-feedback","collection-status"]) {
   assert.ok(page.includes('id="'+id+'"'),"missing "+id);
 }
-for (const feature of ["signInWithOtp","shouldCreateUser:false","poetry_owners",
+for (const feature of ["signInWithPassword","signInWithOtp","shouldCreateUser:false","poetry_owners",
   "createSignedUrl","refreshGallery","savePoem","status","published","draft"]) {
   assert.ok(client.includes(feature),"missing "+feature);
 }

@@ -62,7 +62,7 @@ async function refreshOwner() {
     workspace.hidden = true;
     if (!user) {
       loginForm.hidden = false;
-      adminMessage("请使用已授权的管理员邮箱登录。");
+      adminMessage("请使用已授权的管理员邮箱和密码登录。");
       return;
     }
     const {data:member,error} = await db.from("poetry_owners")
@@ -70,7 +70,7 @@ async function refreshOwner() {
     if (error) throw error;
     if (!member) {
       loginForm.hidden = false;
-      adminMessage("此账号不是授权管理员。请退出并使用管理员邮箱。");
+      adminMessage("此账号不是授权管理员。请使用授权账号重新登录。");
       return;
     }
     owner = user;
@@ -169,7 +169,27 @@ loginForm.addEventListener("submit", async event => {
   event.preventDefault();
   if (!db) return;
   const email = String(loginForm.elements.namedItem("email").value).trim();
-  const button = loginForm.querySelector("button");
+  const passwordInput = loginForm.elements.namedItem("password");
+  const button = loginForm.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+    const {error} = await db.auth.signInWithPassword({email,password:passwordInput.value});
+    if (error) throw error;
+    passwordInput.value = "";
+    await refreshOwner();
+    feedback("已登录，请核对管理员权限。");
+  } catch (error) {
+    feedback("登录失败：" + errMessage(error));
+  } finally { button.disabled = false; }
+});
+$("send-magic-link").addEventListener("click", async () => {
+  if (!db) return;
+  const email = String(loginForm.elements.namedItem("email").value).trim();
+  if (!email || !loginForm.elements.namedItem("email").checkValidity()) {
+    feedback("请先填写有效的邮箱地址。");
+    return;
+  }
+  const button = $("send-magic-link");
   button.disabled = true;
   try {
     const redirect = new URL(location.pathname,location.origin);
@@ -178,9 +198,9 @@ loginForm.addEventListener("submit", async event => {
       email, options:{shouldCreateUser:false,emailRedirectTo:redirect.toString()}
     });
     if (error) throw error;
-    feedback("如邮箱已授权，请查收登录邮件并点击链接。");
+    feedback("如邮箱已授权且邮件服务可用，请查收登录邮件。");
   } catch (error) {
-    feedback("邮件发送失败：" + errMessage(error));
+    feedback("登录邮件发送失败：" + errMessage(error));
   } finally { button.disabled = false; }
 });
 $("sign-out").addEventListener("click", async () => {

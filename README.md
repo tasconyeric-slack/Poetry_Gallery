@@ -48,7 +48,7 @@ labeled classical-poetry DEMO mode. C2/C3 are NOT verified.**
    belonging to another project.
 2. In its SQL Editor, apply `supabase/migrations/20261018000000_poetry_gallery.sql`
    once. It creates the owner whitelist, poems table, private image bucket and RLS.
-3. In Authentication → Users, create the intended owner's email identity in the
+3. In Authentication → Users, create the intended owner's email identity **with a password** in the
    **new project**. Copy the newly created Auth user UUID. In the same new project's
    SQL Editor run:
 
@@ -56,11 +56,11 @@ labeled classical-poetry DEMO mode. C2/C3 are NOT verified.**
 
    Replace the placeholder with the new UUID. Never place this UUID, login email
    or authentication tokens in GitHub files.
-4. Enable Email OTP / Magic Link under Authentication providers. Set the Auth Site URL
-   to `https://shici-archive.vercel.app` and add
-   `https://shici-archive.vercel.app/**` to allowed redirect URLs. For the exact
-   Preview deployment, also add its exact host; avoid a wildcard for all Vercel
-   projects. Magic-link sign-in will *not* create unapproved accounts.
+4. Enable Email/Password under Authentication providers. Magic Link is optional:
+   Supabase default SMTP sends only to project-team email addresses (currently 2 emails/hour).
+   To use Magic Link for a different address, configure a compatible SMTP provider.
+   Set the Auth Site URL to `https://shici-archive.vercel.app`, and add
+   `https://shici-archive.vercel.app/**` plus the exact Preview host to Auth redirect URLs.
 5. In **the existing `tasconyeric-slack/shici-archive` Vercel project only**, set
    `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` for Preview and Production, using
    the **new** Supabase project's URL and public publishable key. Do not use a
@@ -68,7 +68,7 @@ labeled classical-poetry DEMO mode. C2/C3 are NOT verified.**
    Redeploy the Preview. Keep Vercel Framework Preset `Other`, root `./`, no
    build command/output directory, and no custom domain.
 6. Open the Preview `/api/config`: it must report `configured:true` with only
-   public values. Visit `/#admin` to sign in via the authorized email.
+   public values. Visit `/#admin` to sign in with the authorized email and password.
 
 ### Live acceptance tests to perform after setup
 
@@ -91,3 +91,9 @@ Storage images are private; their temporary signed URLs may remain usable for up
 
 For unconfigured static preview: `python3 -m http.server 8000` shows DEMO only.
 Live auth and storage testing requires the configured Vercel Preview.
+
+**Supabase Free-plan cap:** The Free Plan permits only two active projects
+across organizations owned/administered by the same account. If your existing
+active projects exhaust that quota, a dedicated Poetry Gallery instance cannot
+be provisioned on that Free allocation. Do not delete, reuse or modify the other
+projects; resolve quota/access with the account owner before proceeding.
