@@ -23,5 +23,7 @@ jobs:
         run: node scripts/smoke.mjs
       - name: D1 and phone SMS structure
         run: node scripts/mvp-check.mjs
+      - name: Cloudflare public-read and security behavior tests
+        run: node scripts/worker.test.mjs
       - name: Vercel config and origin checks
         run: node scripts/config.test.mjs
