@@ -1,37 +1,24 @@
 import assert from "node:assert/strict";
-import {existsSync,readFileSync} from "node:fs";
-const read = path => readFileSync(path,"utf8");
-for (const path of ["cms.js","cms.css","api/config.js",".env.example",
-  "supabase/migrations/20261018000000_poetry_gallery.sql"]) {
-  assert.ok(existsSync(path),"missing "+path);
-}
-const page = read("index.html");
-const client = read("cms.js");
-const sql = read("supabase/migrations/20261018000000_poetry_gallery.sql");
-const config = read("api/config.js");
-for (const id of ["admin-view","login-form","admin-workspace","poem-form","cover-upload",
-  "reader-cover","admin-feedback","collection-status"]) {
-  assert.ok(page.includes('id="'+id+'"'),"missing "+id);
-}
-for (const feature of ["signInWithPassword","signInWithOtp","shouldCreateUser:false","poetry_owners",
-  "createSignedUrl","refreshGallery","savePoem","status","published","draft"]) {
-  assert.ok(client.includes(feature),"missing "+feature);
-}
-for (const required of [/alter table public.poems enable row level security/,
-  /alter table public.poetry_owners enable row level security/,
-  /for select to anon, authenticated/,
-  /for insert to authenticated/,
-  /for update to authenticated/,
-  /for delete to authenticated/,
-  /create policy "published cover or owner read"/,
-  /create policy "owner uploads cover"/,
-  /public = false/,
-  /storage.foldername\(name\)/]) {
-  assert.match(sql,required,"missing database restriction");
-}
-assert.doesNotMatch(client,/service_role|sb_secret_/);
-assert.doesNotMatch(config,/SERVICE_ROLE|sb_secret_/);
-assert.match(config,/SUPABASE_PUBLISHABLE_KEY/);
-assert.match(config,/sb_publishable_/);
-assert.match(read("app.js"),/print-anthology/);
-console.log("MVP structure and static RLS checks passed; real integration requires a dedicated Supabase project.");
+import {readFileSync,existsSync} from "node:fs";
+const read=p=>readFileSync(p,"utf8");
+for(const p of ["worker/index.js","worker/migrations/0001_poems.sql",
+  "api/poetry.js","api/config.js","cms.js","cms.css","wrangler.toml",".env.example"])
+  assert.ok(existsSync(p),"missing "+p);
+const code=read("worker/index.js"),schema=read("worker/migrations/0001_poems.sql");
+const client=read("cms.js"),html=read("index.html"),proxy=read("api/poetry.js");
+for(const op of ["send","verify","session","logout","save","delete","upload","cover","list","owner-list"])
+  assert.ok(code.includes('"'+op+'"'),"missing "+op);
+for(const required of ["owner_sessions","sms_requests","covers","poems","poetry-gallery-d1"])
+  assert.ok((schema+read("wrangler.toml")).includes(required));
+for(const text of ["GATEWAY_KEY","OTP_PEPPER","OWNER_PHONE","TENCENT_SECRET_KEY","sent_at","daily_count","HttpOnly","Secure","SameSite=Lax","status='published'"])
+  assert.ok(code.includes(text),"missing "+text);
+assert.match(proxy,/POETRY_WORKER_URL/);
+assert.match(proxy,/POETRY_GATEWAY_KEY/);
+assert.match(proxy,/origin/);
+assert.match(read("api/config.js"),/backend:"d1"/);
+assert.ok(client.includes("getContext("),"cover compression missing");
+assert.ok(client.includes('api("verify"'),"phone login missing");
+assert.ok(html.includes('id="send-code"'));
+assert.ok(!html.includes('name="email"'));
+assert.ok(!client.includes("supabase"));
+console.log("D1 SMS publishing structure/security checks passed. Live SMS untested.");

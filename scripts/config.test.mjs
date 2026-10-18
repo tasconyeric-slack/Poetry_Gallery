@@ -1,39 +1,35 @@
 import assert from "node:assert/strict";
 import {createRequire} from "node:module";
-const require = createRequire(import.meta.url);
-const handler = require("../api/config.js");
-const savedUrl = process.env.SUPABASE_URL;
-const savedKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-function call(method = "GET") {
-  const result = {statusCode: 200, headers: {}, data: null};
-  const res = {
-    setHeader(k,v) { result.headers[k] = v; return this; },
-    status(code) { result.statusCode = code; return this; },
-    json(value) { result.data = value; return this; }
-  };
-  handler({method},res);
-  return result;
+const require=createRequire(import.meta.url);
+const config=require("../api/config.js");
+const proxy=require("../api/poetry.js");
+const oldUrl=process.env.POETRY_WORKER_URL,oldKey=process.env.POETRY_GATEWAY_KEY;
+function mock(){
+  const state={status:200,payload:null,headers:{}};
+  const res={setHeader(k,v){state.headers[k]=v;return this;},
+    status(s){state.status=s;return this;},
+    json(d){state.payload=d;return this;},send(d){state.payload=d;return this;}};
+  return {state,res};
 }
-try {
-  process.env.SUPABASE_URL = "https://example.supabase.co";
-  delete process.env.SUPABASE_PUBLISHABLE_KEY;
-  assert.deepEqual(call().data,{configured:false});
-  process.env.SUPABASE_PUBLISHABLE_KEY = "sb_secret_NEVER_EXPOSE";
-  assert.deepEqual(call().data,{configured:false},"secret key must never be exposed");
-  process.env.SUPABASE_PUBLISHABLE_KEY = "sb_publishable_public_test_only";
-  assert.deepEqual(call().data,{
-    configured:true,
-    url:"https://example.supabase.co",
-    key:"sb_publishable_public_test_only"
-  });
-  assert.equal(call("POST").statusCode,405);
-  assert.equal(call().headers["Cache-Control"],"no-store");
-  process.env.SUPABASE_URL = "https://malicious.example.net";
-  assert.deepEqual(call().data,{configured:false},"reject untrusted Supabase URL");
-  console.log("Runtime config handler tests passed (no real credentials used).");
-} finally {
-  if (savedUrl === undefined) delete process.env.SUPABASE_URL;
-  else process.env.SUPABASE_URL = savedUrl;
-  if (savedKey === undefined) delete process.env.SUPABASE_PUBLISHABLE_KEY;
-  else process.env.SUPABASE_PUBLISHABLE_KEY = savedKey;
+try{
+  delete process.env.POETRY_WORKER_URL;delete process.env.POETRY_GATEWAY_KEY;
+  let m=mock();config({method:"GET"},m.res);
+  assert.deepEqual(m.state.payload,{configured:false,backend:"d1"});
+  m=mock();await proxy({method:"GET",query:{}},m.res);
+  assert.equal(m.state.status,503);
+  process.env.POETRY_WORKER_URL="https://poetry-gallery-api.example.workers.dev";
+  process.env.POETRY_GATEWAY_KEY="private-value-never-sent-to-browser";
+  m=mock();config({method:"GET"},m.res);
+  assert.deepEqual(m.state.payload,{configured:true,backend:"d1"});
+  assert.ok(!JSON.stringify(m.state.payload).includes("private-value"));
+  m=mock();await proxy({method:"POST",headers:{
+    origin:"https://evil.example",host:"shici.byliyz.com","content-type":"application/json"
+  },query:{op:"save"},body:{}},m.res);
+  assert.equal(m.state.status,403);
+  console.log("Server-only config and origin gate tests passed.");
+}finally{
+  if(oldUrl===undefined)delete process.env.POETRY_WORKER_URL;
+  else process.env.POETRY_WORKER_URL=oldUrl;
+  if(oldKey===undefined)delete process.env.POETRY_GATEWAY_KEY;
+  else process.env.POETRY_GATEWAY_KEY=oldKey;
 }
