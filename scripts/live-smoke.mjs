@@ -20,4 +20,6 @@ const denied=await fetch(origin+"/?op=save",{
   body:JSON.stringify({title:"Do not write",body:"This must be rejected"})
 });
 assert.equal(denied.status,403,"anonymous post must be rejected");
+const backup=await get("/?op=backup");
+assert.equal(backup.status,403,"anonymous export of draft and private images denied");
 console.log("Live Cloudflare Worker HTTP checks passed; published count:",data.poems.length);

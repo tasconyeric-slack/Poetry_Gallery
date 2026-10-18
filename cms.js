@@ -23,6 +23,7 @@ async function publicApi(op,extra=""){
   return response.json();
 }
 const image=id=>id?PUBLIC_API+"/?op=cover&id="+encodeURIComponent(id):null;
+const ownerImage=id=>id?"/api/poetry?op=cover&id="+encodeURIComponent(id):null;
 function resetEditor(){
   activeId=null;form.reset();$("editor-heading").textContent="新建诗作";
   $("editor-state").textContent="先保存草稿，再上传配图。";
@@ -70,7 +71,7 @@ function openPoem(id){
   for(const n of ["title","body","genre","composed_on","note"])put(n,p[n]);
   $("editor-state").textContent=p.status==="published"?"当前状态：已发布":"当前状态：草稿";
   $("delete-poem").hidden=false;$("admin-cover-preview").hidden=!p.cover_id;
-  if(p.cover_id)$("admin-cover-preview").src=image(p.cover_id);
+  if(p.cover_id)$("admin-cover-preview").src=ownerImage(p.cover_id);
   else $("admin-cover-preview").removeAttribute("src");
 }
 $("export-backup").addEventListener("click",async()=>{

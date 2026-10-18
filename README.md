@@ -52,3 +52,7 @@ The locked owner workspace includes an export button. It downloads a JSON snapsh
 ## WeChat-friendly poem image
 
 Each poem detail includes **生成分享诗卡**. The browser draws a full Chinese poetry card locally on a Canvas and shows a PNG preview that readers can long-press to save and send in WeChat. This does not use a paid API or upload the artwork. Very long poems are directed to link sharing or printable PDF instead of being silently truncated.
+
+## Passkeys inside WeChat
+
+WebAuthn/Passkey availability varies by embedded browser, device and OS. Admin onboarding and login must be verified in the actual target WeChat webview. If unsupported, guide the owner to open shici.byliyz.com in Safari or Chrome for authentication. Do not pretend that all WeChat versions support passkeys. Public reading/sharing remains available in WeChat without logging in.
