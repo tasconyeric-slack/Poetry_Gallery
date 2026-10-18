@@ -110,11 +110,17 @@
       </div>
       <p id="admin-status" role="status" aria-live="polite">正在连接后台…</p>
       <form id="login-form" class="admin-panel" hidden>
-        <label>管理员邮箱<input name="email" type="email" autocomplete="email" required placeholder="请输入预先授权的邮箱" /></label>
-        <label>登录密码<input name="password" type="password" autocomplete="current-password" required placeholder="输入管理员密码" /></label>
-        <button type="submit" class="admin-primary">使用密码登录</button>
-        <button type="button" class="admin-secondary" id="send-magic-link">邮箱登录链接（可选）</button>
-        <p>默认使用邮箱＋密码，无需付费短信或邮件服务。邮箱登录链接需要预先配置邮件发送权限。</p>
+        <label>管理员手机号（含国家代码）
+          <input name="phone" type="tel" inputmode="tel" autocomplete="tel" pattern="\+[1-9][0-9]{7,14}"
+                 value="+86" required placeholder="+8613800000000" />
+        </label>
+        <button type="button" id="send-code" class="admin-secondary">获取短信验证码</button>
+        <label>六位验证码
+          <input name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
+                 pattern="[0-9]{6}" maxlength="6" required placeholder="请输入验证码" />
+        </label>
+        <button type="submit" class="admin-primary">验证并登录</button>
+        <p>已授权的手机号验证一次后，本设备可保持登录 60 天。</p>
       </form>
       <div id="admin-workspace" hidden>
         <div class="admin-toolbar">
@@ -136,7 +142,7 @@
             </div>
             <label>附记（可选）<textarea name="note" rows="3" placeholder="写给这首诗的说明"></textarea></label>
             <div class="admin-cover">
-              <label>配图（保存草稿后可上传）<input id="cover-upload" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+              <label>配图（保存草稿后可上传）<input id="cover-upload" type="file" accept="image/*" /></label><p>自动压缩为 JPEG（550 KB 内），暂不需要额外购买图片存储服务。</p>
               <button type="button" class="admin-secondary" id="upload-cover">上传配图</button>
               <img id="admin-cover-preview" alt="当前配图" hidden />
             </div>

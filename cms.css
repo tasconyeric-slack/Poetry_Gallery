@@ -54,3 +54,6 @@
 .share-manual label{display:block;font-size:12px;line-height:1.8;color:var(--muted)}
 .share-manual input{display:block;max-width:100%;width:100%;padding:10px;font-size:13px;border:1px solid var(--line);margin:9px 0;color:var(--ink)}
 .share-manual button{font-size:12px;padding:10px 14px;border:1px solid var(--dark);background:white;color:var(--dark)}
+
+#login-form button{margin:5px 10px 18px 0}
+#login-form input[type=tel],#login-form input[name=code]{font-size:18px;letter-spacing:.04em}
