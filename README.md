@@ -1,99 +1,91 @@
 # 诗词馆 · Poetry Gallery
 
-A small, mobile-first Chinese poetry archive for family use.
+Only repository: https://github.com/tasconyeric-slack/Poetry_Gallery
+Existing Vercel project: https://vercel.com/tasconyeric-slack/shici-archive
+Custom domain (ALREADY LINKED): https://shici.byliyz.com/
 
-**Correct project targets (do not change):**
-- GitHub: `tasconyeric-slack/Poetry_Gallery`
-- Vercel project: `tasconyeric-slack/shici-archive`
-- Until the custom domain is ready, use the project's `.vercel.app` production URL.
-- Reserved future domain: `shici.byliyz.com` (DO NOT configure it yet).
+Mobile-first family poetry archive: public published poems, private owner drafts, print and share. The owner uses phone SMS verification and receives a secure HttpOnly 60-day session cookie, not email/password.
 
-## Current state
+## Architecture — NO Supabase
 
-This is an intentionally dependency-free **read-only demonstration**, not the final publishing MVP. The sample poems are well-known public-domain classical works, **not the owner's family poems**. It provides an actual website shell with mobile layout, archive search/filter, poem reader, and share/copy features. Do not imply the sample content belongs to the family.
+- Static site + Vercel same-origin API gateway: api/poetry.js
+- Dedicated Cloudflare Worker: worker/index.js
+- Dedicated Cloudflare D1 database: poetry-gallery-d1, DB binding, UUID 6f92588b-0a92-41c6-ad43-ae014f6112fe
+- Tencent Cloud SMS gateway: six-digit code, valid 5 minutes; 60-second cooldown, maximum 5 SMS/day, 6 attempts/code
+- Covers compressed client-side to JPEG under 550 KB, stored privately in D1. The picture endpoint only returns a published poem cover or an owner's own session. R2 is intentionally not required.
+- Without backend, site remains a clearly marked classical-poetry DEMO. The owner's real poems are never fabricated or imported.
 
-To preview locally:
+D1 is serverless; no database keepalive task. Do not use or alter any existing Supabase resources.
 
-```bash
-python3 -m http.server 8000
-# visit http://localhost:8000
-```
+## One-time setup
 
-To deploy: link the **existing** Vercel `shici-archive` project to this exact repository, set Framework Preset to `Other`, Root Directory to `./`, and no build command or output directory. Pushes to `main` should deploy automatically. Do not create a second Vercel project.
+### 1. Cloudflare Worker
 
-## Next milestone: functional MVP
+A brand-new Poetry Gallery D1 database was created, with the initial tables successfully applied. No other databases were touched.
 
-Add persistent database-backed poem CRUD, single-owner authentication, and cover/image upload; keep the public gallery and detail pages shareable. After these work, add share-card image export and printable/PDF poetry book.
+In this exact repository, deploy using Wrangler (after authorizing the account that owns poetry-gallery-d1):
 
-Reference `AGENTS.md` for mandatory execution guardrails and `docs/MVP_SPEC.md` for acceptance criteria. **Implement code and verify real functionality before lengthy planning.**
+    npx wrangler@4 deploy
 
-## Safety
+Wrangler configuration is committed in wrangler.toml and automatically binds DB. If needed to record/synchronize the migration, run:
 
-Never commit passwords, API service-role keys or personally identifying data. Treat published poems as public, drafts as private. Sample content is demonstration-only; replace through the owner workflow once persistence exists.
+    npx wrangler@4 d1 migrations apply poetry-gallery-d1 --remote
 
-## Functional publishing MVP (feature branch)
+Configure the following Cloudflare Worker Secrets in the dedicated poetry-gallery-api Worker. NEVER put these values into GitHub files or screenshots:
 
-The static gallery now includes a single-owner management interface at `/#admin`,
-Supabase-backed CRUD, image upload to a private bucket, and published-only public reads.
-No rebuild or new Vercel project is necessary. The official Supabase JavaScript SDK is
-loaded from a version-pinned CDN (`@supabase/supabase-js@2.117.1`).
-Vercel `/api/config` intentionally exposes only URL and **publishable** key.
+- GATEWAY_KEY: random secret of at least 32 bytes; must EXACTLY equal Vercel POETRY_GATEWAY_KEY
+- OWNER_PHONE: only authorized phone number with country prefix, e.g. +8613800000000 (example only)
+- OTP_PEPPER: another independent random secret of at least 32 bytes
+- TENCENT_SECRET_ID: Tencent Cloud API SecretId for the SMS service
+- TENCENT_SECRET_KEY: Tencent Cloud API SecretKey for the SMS service
+- TENCENT_SMS_APP_ID: SMS SDK AppID
+- TENCENT_SMS_SIGN: approved SMS signature
+- TENCENT_SMS_TEMPLATE: approved verification template ID, with 2 parameters: verification code and expiration minutes (5)
 
-**Until a dedicated Supabase instance is configured, the website remains in explicitly
-labeled classical-poetry DEMO mode. C2/C3 are NOT verified.**
+Where: Cloudflare Dashboard → Workers & Pages → poetry-gallery-api → Settings → Variables and Secrets → Add (type Secret). Alternatively use Wrangler: npx wrangler@4 secret put GATEWAY_KEY (repeat per secret).
 
-### Required one-time setup
+China SMS requires Tencent Cloud verification/signature/template qualification and prepaid credits. If you do not have a qualifying SMS account, real SMS login remains BLOCKED; do not fake it. Do NOT create a phone-based login without rate-limiting or send OTP to arbitrary numbers.
 
-1. Create a **new free Supabase project solely for Poetry Gallery**. Do not use a database
-   belonging to another project.
-2. In its SQL Editor, apply `supabase/migrations/20261018000000_poetry_gallery.sql`
-   once. It creates the owner whitelist, poems table, private image bucket and RLS.
-3. In Authentication → Users, create the intended owner's email identity **with a password** in the
-   **new project**. Copy the newly created Auth user UUID. In the same new project's
-   SQL Editor run:
+After deployment, record its ACTUAL workers.dev URL from Cloudflare; do not guess the account's subdomain.
 
-   `insert into public.poetry_owners(user_id) values ('YOUR_OWNER_AUTH_UUID');`
+### 2. Existing Vercel project only
 
-   Replace the placeholder with the new UUID. Never place this UUID, login email
-   or authentication tokens in GitHub files.
-4. Enable Email/Password under Authentication providers. Magic Link is optional:
-   Supabase default SMTP sends only to project-team email addresses (currently 2 emails/hour).
-   To use Magic Link for a different address, configure a compatible SMTP provider.
-   Set the Auth Site URL to `https://shici-archive.vercel.app`, and add
-   `https://shici-archive.vercel.app/**` plus the exact Preview host to Auth redirect URLs.
-5. In **the existing `tasconyeric-slack/shici-archive` Vercel project only**, set
-   `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` for Preview and Production, using
-   the **new** Supabase project's URL and public publishable key. Do not use a
-   service-role or secret key; the public key is safe only because RLS is enforced.
-   Redeploy the Preview. Keep Vercel Framework Preset `Other`, root `./`, no
-   build command/output directory, and no custom domain.
-6. Open the Preview `/api/config`: it must report `configured:true` with only
-   public values. Visit `/#admin` to sign in with the authorized email and password.
+Go to https://vercel.com/tasconyeric-slack/shici-archive/settings/environment-variables
 
-### Live acceptance tests to perform after setup
+Add TWO SERVER-SIDE environment variables for Preview and Production:
 
-- Sign in → create draft → refresh → edit → sign out/in → draft remains.
-- Publish → view `/#poem/<UUID>` in a private browser → unpublish → anonymous
-  detail becomes unavailable on refresh.
-- Confirm an anonymous database SELECT returns no drafts and anonymous INSERT,
-  UPDATE and DELETE are rejected. Unapproved signed-in users cannot edit.
-- Upload a JPG/PNG/WebP image (≤5 MB) to a saved poem, refresh and view it.
-- Check on 375px mobile, desktop and WeChat; try share URL and browser print.
+Name: POETRY_WORKER_URL
+Value: Exact deployed Cloudflare poetry-gallery-api worker URL, starting with https:// and ending in workers.dev or its verified host.
 
-Storage images are private; their temporary signed URLs may remain usable for up to
-15 minutes after unpublishing. A later cleanup task can remove orphaned media.
+Name: POETRY_GATEWAY_KEY
+Value: The exact same random secret as Cloudflare Worker GATEWAY_KEY.
 
-### Developer checks
+They are NOT PUBLIC browser variables. Do NOT use NEXT_PUBLIC_, VITE_, SUPABASE_, or expose the SMS secrets. The browser's /api/config response contains only whether the backend is configured; the Vercel gateway privately calls the Worker.
 
-`node --check app.js && node --check cms.js && node --check api/config.js`
+Save, then redeploy the Vercel Preview branch to apply the environment variables. The domain shici.byliyz.com is ALREADY linked: do not change DNS/domain/project. Production stays on main until explicit owner approval.
 
-`node scripts/smoke.mjs && node scripts/mvp-check.mjs`
+### 3. Test (NOT YET VERIFIED)
 
-For unconfigured static preview: `python3 -m http.server 8000` shows DEMO only.
-Live auth and storage testing requires the configured Vercel Preview.
+1. /api/config shows configured:true after both Vercel variables are present.
+2. Authorized phone receives an SMS, wrong numbers/codes denied, sessions last across refresh, logout works.
+3. Draft saves, reloads and stays invisible to strangers; edit, publish and share a link; unpublish and verify anonymous detail disappears.
+4. Anonymous POST mutation is denied; private cover returns 404; published image displays.
+5. WeChat browser, 375px mobile, desktop, share fallback and PDF print tested.
+6. Verify GitHub Actions and the Preview HTTP endpoint before marking C2/C3 complete.
 
-**Supabase Free-plan cap:** The Free Plan permits only two active projects
-across organizations owned/administered by the same account. If your existing
-active projects exhaust that quota, a dedicated Poetry Gallery instance cannot
-be provisioned on that Free allocation. Do not delete, reuse or modify the other
-projects; resolve quota/access with the account owner before proceeding.
+## Commands
+
+    node --check app.js
+    node --check cms.js
+    node --check api/config.js
+    node --check api/poetry.js
+    node --check worker/index.js
+    node scripts/smoke.mjs
+    node scripts/mvp-check.mjs
+    node scripts/config.test.mjs
+
+For unconfigured static-only demo: python3 -m http.server 8000.
+
+## Limitations
+
+China mainland domestic SMS is a regulated paid service, requiring provider approval; it cannot be guaranteed for unverified personal accounts. R2 is inactive; covers are compressed to fit D1 row limits. Signing in on a new device or after 60 days requires another SMS; there is no unnecessary recurring keepalive requirement.

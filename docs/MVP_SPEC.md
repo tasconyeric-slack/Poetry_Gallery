@@ -1,45 +1,12 @@
-# P0 — Poetry Gallery MVP
+# Poetry Gallery P0 specification
 
-## Goal
-A father can independently publish his original Chinese poems; family members can comfortably browse, read and share them from a phone. Use the EXISTING GitHub and Vercel project. The site must be visibly usable before any extensive architecture work.
+ONLY tasconyeric-slack/Poetry_Gallery and EXISTING shici-archive Vercel project.
+shici.byliyz.com is already linked; DO NOT reconfigure it.
 
-## Current baseline (Stage 0)
-- Dependency-free static gallery on `main`: elegant mobile-friendly home, example archive, search/filter, poem reader, copy/share, print layout.
-- All existing entries are marked as DEMO/classical poems. No sign-in or database in the baseline.
-- No custom domain setup.
+A single family member can publish and edit original Chinese poetry on a phone. Guests can browse, read, search, copy/share and print published poems with clear Chinese typography and 375px responsive layout. Unpublished poems and cover images must remain private.
 
-## P0 product requirements
-1. **Public pages:** gallery/homepage, searchable poem list, readable detail page with stable shareable URL; polished Chinese typesetting and mobile layouts.
-2. **Single owner login:** preferably email magic link (free-tier compatible); login/logout/session persistence and an access-controlled `/admin` workspace. No paid SMS integration.
-3. **Data persistence:** choose a suitable managed SQL database (Supabase is the suggested low-setup default; verify current free-plan constraints). Poems include ID, title, content, genre/category, created/published timestamps, status (draft/published), optional note, optional cover/image path. Define schema and migrations in repo.
-4. **Real CRUD:** owner creates, edits, saves draft, publishes, unpublishes and deletes (with confirmation). Changes survive reload and signing in again, and are visible across devices.
-5. **Access control:** visitors see ONLY published work; only owner can mutate. Enforce at database policy/server boundary, not just UI. Use Supabase RLS or an equivalent sound policy. Media upload restricted to owner; public only where intended.
-6. **Image/cover:** upload at least one cover photo for a poem, store it durably, and display it without distorted aspect ratio.
-7. **Share:** native share where available and copy URL fallback. Implement image share-card export after core CRUD; do not let its complexity block basic publishing.
-8. **E-book:** simple printable anthology / browser Print-to-PDF with deliberate page breaks is acceptable for P0; elaborate PDF server rendering can follow.
+Backend: independent Cloudflare D1 + Worker, NOT Supabase. Login: one authorized mobile phone using paid-provider SMS code, then long-lived secure cookie. Phone must be explicitly whitelisted in server secrets. No email or keepalive dependence. Cover images compressed and stored in D1 for this small archive; advanced image hosting may follow.
 
-## UX requirements
-- Chinese-first, clear hierarchy; avoid tiny low-contrast text and decorations over text.
-- Mobile viewport ~375px must not scroll horizontally.
-- Readable Chinese line breaks and punctuation; preserve poetry stanza formatting.
-- Empty, loading and error states for real data.
-- Keyboard accessibility and obvious admin controls.
-- WeChat in-app browser: sharing fallback must work without Web Share/clipboard APIs.
+Core operations: create draft, refresh/edit, publish, unpublish, delete with confirmation; public gallery only published content; negative tests for unauthenticated writes and draft/media reads. Mobile/WeChat share fallbacks and browser print anthology.
 
-## Non-goals
-No WeChat mini program, paid SMS, comments, community, payment, music/MV, AI content generation, multi-tenant roles, advanced SEO/admin analytics. Custom domain `shici.byliyz.com` is reserved for later.
-
-## Checkpoints
-**C0 (current):** tracked, runnable homepage/demo and documented setup on GitHub.
-**C1:** first live production site at the project's Vercel default domain; homepage and mobile UI actually load. No real owner data needed.
-**C2:** authentication + database + CRUD work end-to-end, including refresh/relogin and public/private permissions.
-**C3:** cover upload + share + basic printable anthology are tested.
-
-## Definition of done
-- There are substantive source changes committed to this repository.
-- Production/preview deployment is READY and publicly reachable as configured.
-- Owner test: sign in → create draft → refresh → edit → publish → open public detail in separate unauthenticated session → unpublish → public page disappears → sign out/in → draft remains.
-- Negative test: unauthenticated write to database/API rejected.
-- At least 375px mobile and desktop verified, no horizontal overflow, basic keyboard navigation.
-- README lists only necessary human actions and exact commands.
-- Report branch, commit SHA, PR, deploy URL, tested functionality and anything still blocked. Do not report untested items as completed.
+SMS credits/provider qualifications and initial worker/Vercel server-only variables are necessary human setup. Never mark full C2/C3 complete until live SMS, cross-device persistence, auth/authorization, cover, desktop/mobile and Vercel Preview tests pass.
