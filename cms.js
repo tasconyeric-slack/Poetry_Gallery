@@ -265,6 +265,8 @@ async function initialize() {
     db.auth.onAuthStateChange(() => {
       setTimeout(() => { void refreshOwner(); },0);
     });
+    // Wait until the SDK has consumed any magic-link credentials in the URL.
+    await db.auth.getSession();
     if (new URLSearchParams(location.search).get("entry") === "admin") {
       history.replaceState(null,"",location.pathname + "#admin");
       window.dispatchEvent(new Event("hashchange"));

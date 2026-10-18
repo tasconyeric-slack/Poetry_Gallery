@@ -1,4 +1,4 @@
-name: Static site checks
+name: Poetry Gallery checks
 on:
   push:
     branches: [main]
@@ -14,7 +14,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - name: Check JavaScript syntax
-        run: node --check app.js
-      - name: Check basic static site structure
+      - name: Validate JavaScript syntax
+        run: |
+          node --check app.js
+          node --check cms.js
+          node --check api/config.js
+      - name: Check existing public gallery
         run: node scripts/smoke.mjs
+      - name: Check publishing structure and security rules
+        run: node scripts/mvp-check.mjs
