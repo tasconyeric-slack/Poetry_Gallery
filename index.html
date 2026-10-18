@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f7f5ef" />
+  <meta name="description" content="诗词馆——把写给岁月的诗，认真收藏。" />
+  <title>诗词馆 · 把岁月写成诗</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#home" aria-label="诗词馆首页"><span class="brand-seal" aria-hidden="true">诗</span><span>诗词馆</span></a>
+      <nav aria-label="主导航" class="nav-links">
+        <a href="#home">首页</a>
+        <a href="#gallery">诗作</a>
+        <a href="#about">关于</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div id="catalog-view">
+      <section class="hero" id="home" aria-labelledby="hero-title">
+        <div class="hero-inner">
+          <div class="hero-content">
+            <p class="eyebrow"><span class="eyebrow-line"></span> 一纸诗心 · 岁月留痕</p>
+            <h1 id="hero-title">让每一首诗，<br /><em>都有安放的地方。</em></h1>
+            <p class="hero-description">把生活中的感悟写成诗，把写下的诗留给岁月。一座安静的诗词馆，收藏文字，也收藏时光。</p>
+            <a class="primary-link" href="#gallery">翻阅诗作 <span aria-hidden="true">↗</span></a>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="art-frame">
+              <span class="art-small">岁月成章</span>
+              <span class="art-character">詩</span>
+              <span class="art-vertical">一字一句皆是光阴</span>
+              <span class="art-mark">卷 · 壹</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-bottom"><span>THE POETRY ARCHIVE</span><span>向下 · 读一首诗 ↓</span></div>
+      </section>
+
+      <section class="archive section-shell" id="gallery" aria-labelledby="archive-title">
+        <div class="section-heading">
+          <div><p class="eyebrow dark-eyebrow">01 / THE COLLECTION</p><h2 id="archive-title">诗作选集<span class="heading-dot">.</span></h2></div>
+          <p class="heading-aside">在字里行间，重逢某个时刻。</p>
+        </div>
+
+        <div class="demo-notice" role="note"><span class="notice-symbol">※</span> 当前展示的是<strong>古典诗词示例</strong>，用于预览版式；正式上线后将替换为个人原创作品。</div>
+
+        <div class="archive-tools">
+          <div class="filters" role="group" aria-label="按体裁筛选">
+            <button class="filter active" type="button" data-filter="全部" aria-pressed="true">全部</button>
+            <button class="filter" type="button" data-filter="五言" aria-pressed="false">五言</button>
+            <button class="filter" type="button" data-filter="七言" aria-pressed="false">七言</button>
+          </div>
+          <label class="search-wrap"><span class="sr-only">搜索诗名或作者</span><span aria-hidden="true">⌕</span><input id="poem-search" type="search" autocomplete="off" placeholder="搜索诗名、作者、诗句" /></label>
+        </div>
+
+        <div id="poem-grid" class="poem-grid" aria-live="polite"></div>
+        <p id="no-results" class="no-results" hidden>没有找到符合条件的诗作，试试其他关键词。</p>
+      </section>
+
+      <section class="about section-shell" id="about" aria-labelledby="about-title">
+        <div class="about-number">02 / A NOTE FROM THE ARCHIVE</div>
+        <div class="about-body"><span class="about-glyph" aria-hidden="true">文</span><div><h2 id="about-title">写下的诗，值得被珍藏。</h2><p>诗不必写给远方。它可以是一场春雨、一段旅程，也可以是寻常日子里忽然闪现的心绪。这里将陆续收录那些值得回味的文字，让每一次落笔，都有迹可循。</p><p class="about-footnote">此站目前是第一版展示样站，尚未开放正式投稿与个人作品管理。</p></div></div>
+      </section>
+    </div>
+
+    <section id="reading-view" class="reader-view section-shell" aria-labelledby="reader-title" hidden>
+      <button id="back-to-gallery" class="back-link" type="button"><span aria-hidden="true">←</span> 返回诗作</button>
+      <div class="reader-paper">
+        <p class="reader-kicker" id="reader-genre"></p>
+        <h1 id="reader-title"></h1>
+        <p class="reader-author" id="reader-author"></p>
+        <div class="reader-poem" id="reader-poem"></div>
+        <div class="reader-rule" aria-hidden="true"><span>✦</span></div>
+        <p class="reader-note" id="reader-note"></p>
+        <div class="reader-actions">
+          <button type="button" id="share-poem">分享这首诗 ↗</button>
+          <button type="button" id="print-poem">打印 / 保存为 PDF</button>
+        </div>
+        <p class="reader-feedback" id="reader-feedback" role="status" aria-live="polite"></p>
+      </div>
+      <p class="reader-demo-label">古典诗词演示内容 · 非个人原创作品</p>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="footer-inner"><span class="footer-brand">诗词馆 <i>·</i> 岁月有诗</span><span>一字一句，皆有来处。 <span class="footer-year">© <span id="year"></span></span></span></div></footer>
+</body>
+</html>
