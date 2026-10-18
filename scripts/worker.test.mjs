@@ -20,7 +20,7 @@ const env={DB:{prepare(sql){const q={sql,params:[]};sqlSeen.push(q);return{
     }
     throw Error("Unexpected detail SQL");
   }
-};}}}};
+};}}};
 async function call(op,method="GET",body){
   return worker.fetch(new Request("https://example.workers.dev/?op="+op,{
     method,headers:body?{"content-type":"application/json"}:undefined,
