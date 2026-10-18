@@ -21,5 +21,7 @@ jobs:
           node --check api/config.js
       - name: Check existing public gallery
         run: node scripts/smoke.mjs
+      - name: Exercise Vercel runtime-config handler
+        run: node scripts/config.test.mjs
       - name: Check publishing structure and security rules
         run: node scripts/mvp-check.mjs
