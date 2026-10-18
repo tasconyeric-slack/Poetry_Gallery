@@ -1,12 +1,11 @@
-# Poetry Gallery P0 specification
+# P0 — Poetry Gallery, revised 2026-10-18
 
-ONLY tasconyeric-slack/Poetry_Gallery and EXISTING shici-archive Vercel project.
-shici.byliyz.com is already linked; DO NOT reconfigure it.
+Only tasconyeric-slack/Poetry_Gallery; existing shici-archive Vercel project, already linked shici.byliyz.com.
 
-A single family member can publish and edit original Chinese poetry on a phone. Guests can browse, read, search, copy/share and print published poems with clear Chinese typography and 375px responsive layout. Unpublished poems and cover images must remain private.
+Public P0: Chinese mobile-first accessible typography, searchable/filterable published poem catalogue, stable shareable detail, optional private-stored cover visible only after publishing, native/WeChat-friendly sharing, selection/copy fallback, browser print anthology. No registered visitor accounts.
 
-Backend: independent Cloudflare D1 + Worker, NOT Supabase. Login: one authorized mobile phone using paid-provider SMS code, then long-lived secure cookie. Phone must be explicitly whitelisted in server secrets. No email or keepalive dependence. Cover images compressed and stored in D1 for this small archive; advanced image hosting may follow.
+Backend: independent Cloudflare D1 poetry-gallery-d1 and Cloudflare Worker poetry-gallery-api. No use of Supabase or keepalive jobs. Public GET endpoints operate without SMS, email, secret Vercel settings, or owner login.
 
-Core operations: create draft, refresh/edit, publish, unpublish, delete with confirmation; public gallery only published content; negative tests for unauthenticated writes and draft/media reads. Mobile/WeChat share fallbacks and browser print anthology.
+Owner P0 later: WebAuthn Passkey with owner-only initialization and lost-phone recovery, secure HttpOnly sessions, create/edit/save draft/publish/unpublish/delete, image upload. Never permit public registration or write access. Source code may exist while login is deferred, but privileged routes remain disabled until real security tests pass.
 
-SMS credits/provider qualifications and initial worker/Vercel server-only variables are necessary human setup. Never mark full C2/C3 complete until live SMS, cross-device persistence, auth/authorization, cover, desktop/mobile and Vercel Preview tests pass.
+Do not call authenticated publishing, cross-device persistence, owner images, or C2/C3 fully done until real Passkey and owner tests pass. No custom domain changes, community features, payments, comments or AI.

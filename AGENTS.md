@@ -1,5 +1,9 @@
-# Poetry Gallery mandatory execution contract
+# Poetry Gallery — enforce strict project isolation
 
-Work ONLY in tasconyeric-slack/Poetry_Gallery. Continue feat/poetry-publishing-mvp and PR #1. Existing Vercel project is tasconyeric-slack/shici-archive; custom domain shici.byliyz.com is ALREADY linked (no DNS work).
-Backend: dedicated Cloudflare D1 poetry-gallery-d1 and Worker poetry-gallery-api, not Supabase. Do not touch unrelated repositories, Vercel projects, Supabase projects, or Cloudflare resources. The owner prefers authorized phone SMS with long-lived secure session. No email or keepalive job. Mainland China SMS may require provider approval and payment.
-Ship real code and test, not more proposals. Use README and docs/CODEX_TASK.md. Keep DEMO visible while not configured. All draft/media restrictions must be server-side. Never expose SMS secrets, shared gateway key or owner phone. Do not claim integrated/authenticated completion without live verification. No merging into main without explicit owner approval.
+Repository is ONLY tasconyeric-slack/Poetry_Gallery. Existing Vercel target ONLY tasconyeric-slack/shici-archive. Domain shici.byliyz.com already linked. Never touch any other repositories, Vercel projects, Supabase databases or unrelated Cloudflare resources.
+
+Single-author Chinese poetry website, mobile/WeChat-first. Keep publicly published works readable without login. Independent Cloudflare D1 + Worker is authoritative. No Supabase or cron keepalive.
+
+Owner login design is WebAuthn Passkey; implementation is DEFERRED. Do not implement insecure bypasses or enable owner write access before safe one-person enrollment/recovery and security verification. Phone SMS abandoned due to enterprise qualification; do not reinstate it.
+
+Continue feat/poetry-publishing-mvp and PR #1. Commit tested code; preserve working demo, visibility boundaries, share/print. Distinguish mock/CI checks from real browser and live auth tests. Never merge to main without owner approval.
