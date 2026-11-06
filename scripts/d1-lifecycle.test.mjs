@@ -7,6 +7,7 @@ import {createHash} from "node:crypto";
 const db=new DatabaseSync(":memory:");
 db.exec("PRAGMA foreign_keys=ON;");
 db.exec(readFileSync("worker/migrations/0001_poems.sql","utf8"));
+db.exec(readFileSync("worker/migrations/0002_author.sql","utf8"));
 const adapter={
   prepare(sql){
     let args=[];

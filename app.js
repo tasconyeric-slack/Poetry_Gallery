@@ -32,6 +32,8 @@ let poems = [
 ];
 
 const demoPoems = poems.slice();
+poems = [];
+const byline = poem => [poem.dynasty, poem.author, poem.composedOn].filter(Boolean).join(" · ");
 const catalog = document.getElementById("catalog-view");
 const reading = document.getElementById("reading-view");
 const grid = document.getElementById("poem-grid");
@@ -56,7 +58,7 @@ function cardFor(poem, index) {
   top.append(node("span", "card-tag", poem.genre), node("span", "", String(index + 1).padStart(2, "0") + " / ARCHIVE"));
   card.append(top);
   card.append(node("h3", "card-title", poem.title));
-  card.append(node("span", "card-author", `${poem.dynasty} · ${poem.author}`));
+  card.append(node("span", "card-author", byline(poem)));
   card.append(node("div", "card-excerpt", poem.lines.slice(0, 2).join("\n")));
   const foot = node("div", "card-footer");
   foot.append(node("span", "", poem.demo === false ? "原创诗作" : "古典诗词 · 演示"), node("span", "card-arrow", "↗"));
@@ -75,8 +77,8 @@ function renderGrid() {
 
 function renderReading(poem) {
   document.getElementById("reader-title").textContent = poem.title;
-  document.getElementById("reader-author").textContent = `${poem.dynasty} · ${poem.author}`;
-  document.getElementById("reader-genre").textContent = `古典诗词 / ${poem.genre}`;
+  document.getElementById("reader-author").textContent = byline(poem);
+  document.getElementById("reader-genre").textContent = `${poem.demo === false ? "原创诗作" : "古典示例"} / ${poem.genre}`;
   document.getElementById("reader-poem").textContent = poem.lines.join("\n");
   document.getElementById("reader-note").textContent = poem.note || "";
   const cover = document.getElementById("reader-cover");
@@ -90,12 +92,27 @@ function renderReading(poem) {
   document.title = `${poem.title} · 诗词馆`;
 }
 
-function renderRoute() {
-  const route = decodeURIComponent(location.hash.slice(1));
+let routeVersion = 0;
+async function renderRoute() {
+  const version = ++routeVersion;
+  let route;
+  try { route = decodeURIComponent(location.hash.slice(1)); } catch { route = "poem/invalid"; }
   const admin = document.getElementById("admin-view");
   const isAdmin = route === "admin";
   const isPoem = route.startsWith("poem/");
-  const poem = isPoem ? poems.find(p => p.id === route.slice(5)) : null;
+  let poem = isPoem ? poems.find(p => p.id === route.slice(5)) : null;
+  let detailError = null;
+  if (isPoem && !poem && window.poetryGallery?.loadDetail) {
+    catalog.hidden = true; reading.hidden = false; admin.hidden = true;
+    activePoem = null;
+    document.querySelector(".reader-actions").hidden = true;
+    document.getElementById("reader-title").textContent = "正在读取作品…";
+    for (const id of ["reader-author","reader-genre","reader-poem","reader-note","reader-feedback"]) document.getElementById(id).textContent = "";
+    for (const id of ["share-manual","share-image-preview","reader-cover","reader-demo-label"]) document.getElementById(id).hidden = true;
+    try { poem = await window.poetryGallery.loadDetail(route.slice(5)); }
+    catch (error) { detailError = error; }
+    if (version !== routeVersion) return;
+  }
   admin.hidden = !isAdmin;
   catalog.hidden = isAdmin || isPoem;
   reading.hidden = !isPoem;
@@ -106,11 +123,13 @@ function renderRoute() {
     window.scrollTo(0, 0);
   } else if (isPoem) {
     activePoem = null;
-    document.getElementById("reader-title").textContent = "作品不存在或尚未发布";
+    document.getElementById("share-image-preview").hidden = true;
+    document.getElementById("share-manual").hidden = true;
+    document.getElementById("reader-title").textContent = detailError && detailError.status !== 404 ? "作品暂时无法加载" : "作品不存在或尚未发布";
     document.getElementById("reader-author").textContent = "";
     document.getElementById("reader-genre").textContent = "";
     document.getElementById("reader-poem").textContent = "";
-    document.getElementById("reader-note").textContent = "请返回诗集查看已公开的作品。";
+    document.getElementById("reader-note").textContent = detailError && detailError.status !== 404 ? "请稍后刷新重试，或返回诗集。" : "请返回诗集查看已公开的作品。";
     document.getElementById("reader-cover").hidden = true;
     document.getElementById("reader-demo-label").hidden = true;
     document.title = "未找到作品 · 诗词馆";
@@ -151,7 +170,7 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
     }
     return chunks;
   });
-  if (contentLines.length > 34) {
+  if (contentLines.length > 34 || Array.from(activePoem.title).length > 26 || byline(activePoem).length > 48) {
     feedback.textContent = "这首诗篇幅较长，请使用链接分享或打印成 PDF。";
     return;
   }
@@ -175,10 +194,10 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
   ctx.fillText("诗 词 馆  ·  岁 月 成 章", 450, 112);
   ctx.fillStyle = ink;
   ctx.font = '600 58px "Songti SC","Noto Serif CJK SC",serif';
-  ctx.fillText(activePoem.title.slice(0, 25), 450, 225, 760);
+  ctx.fillText(activePoem.title, 450, 225, 760);
   ctx.font = "26px serif";
   ctx.fillStyle = "#808579";
-  ctx.fillText((activePoem.dynasty + " · " + activePoem.author).slice(0, 40), 450, 284, 760);
+  ctx.fillText(byline(activePoem), 450, 284, 760);
   ctx.strokeStyle = "#bfae98";
   ctx.beginPath();
   ctx.moveTo(330, 327);
@@ -194,7 +213,8 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
   ctx.fillText("一字一句，皆有来处。", 450, canvas.height - 146);
   ctx.fillStyle = "#999b94";
   ctx.font = "20px sans-serif";
-  ctx.fillText("shici.byliyz.com", 450, canvas.height - 100);
+  ctx.fillText(location.origin + location.pathname, 450, canvas.height - 100, 760);
+  ctx.fillText("#poem/" + activePoem.id, 450, canvas.height - 70, 760);
   try {
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
     if (!blob) throw Error("生成失败");
@@ -262,7 +282,7 @@ document.getElementById("print-anthology").addEventListener("click", () => {
     const title = document.createElement("h2");
     title.textContent = poem.title;
     const author = document.createElement("p");
-    author.textContent = poem.dynasty + " · " + poem.author +
+    author.textContent = byline(poem) +
       (poem.demo === false ? "" : " · 演示内容");
     const content = document.createElement("div");
     content.className = "anthology-body";
@@ -281,14 +301,18 @@ window.addEventListener("afterprint", () => {
 });
 
 window.poetryGallery = {
+  route: renderRoute,
   showExamples() {
     poems=demoPoems;
+    document.getElementById("collection-status").textContent="当前为古典诗词演示，非家庭原创诗集。";
+    document.getElementById("print-anthology").textContent="打印古典示例 / 保存 PDF";
     document.getElementById("demo-notice").hidden=false;
     renderGrid();
     renderRoute();
   },
   setPublished(items, isDemo) {
     poems = items;
+    document.getElementById("print-anthology").textContent="打印已发布诗集 / 保存 PDF";
     document.getElementById("demo-notice").hidden = !isDemo;
     document.getElementById("no-results").textContent = items.length
       ? "没有找到符合条件的诗作，试试其他关键词。" : "暂无已发布的诗作。";

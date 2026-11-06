@@ -19,7 +19,7 @@ async function publicApi(op,extra=""){
   const response=await fetch(PUBLIC_API+"/?op="+encodeURIComponent(op)+extra,{
     method:"GET",mode:"cors",credentials:"omit",cache:"no-store"
   });
-  if(!response.ok)throw Error("Public archive unavailable ("+response.status+")");
+  if(!response.ok){const error=Error("Public archive unavailable");error.status=response.status;throw error;}
   return response.json();
 }
 const image=id=>id?PUBLIC_API+"/?op=cover&id="+encodeURIComponent(id):null;
@@ -30,28 +30,27 @@ function resetEditor(){
   $("delete-poem").hidden=true;$("admin-cover-preview").hidden=true;
   $("admin-cover-preview").removeAttribute("src");
 }
-function forGallery(p){return {id:p.id,title:p.title,author:"诗词馆",dynasty:"原创",
-  genre:p.genre,lines:p.body.split("\n"),note:p.note||"",coverUrl:image(p.cover_id),demo:false};}
+function forGallery(p){return {id:p.id,title:p.title,author:p.author||"作者未署名",dynasty:"原创",
+  genre:p.genre,lines:p.body.split("\n"),note:p.note||"",composedOn:p.composed_on||"",coverUrl:image(p.cover_id),demo:false};}
+window.poetryGallery.loadDetail=async id=>forGallery((await publicApi("detail","&id="+encodeURIComponent(id))).poem);
 async function refreshGallery(){
+  window.poetryGallery.setStatus("正在读取公开诗集…");
   try{
     const result=await publicApi("list");
-    const published=(result.poems||[]).map(forGallery);
-    if(published.length){
-      window.poetryGallery.setPublished(published,false);
-      window.poetryGallery.setStatus("");
-    }else{
-      window.poetryGallery.showExamples();
-      window.poetryGallery.setStatus("目前尚无已发布的原创诗作。以下展示古典诗词版式示例。");
-    }
+    if(!Array.isArray(result.poems))throw Error("Invalid archive response");
+    window.poetryGallery.setPublished(result.poems.map(forGallery),false);
+    window.poetryGallery.setStatus(result.poems.length?"":"尚无已发布的原创诗作。可选择下方古典示例预览阅读与分享。");
   }catch{
-    window.poetryGallery.showExamples();
-    window.poetryGallery.setStatus("原创诗集暂时无法连接，当前仅显示古典诗词演示。");
+    window.poetryGallery.setPublished([],false);
+    window.poetryGallery.setStatus("暂时无法连接原创诗集。请重试，或选择古典示例预览。");
   }
 }
+$("show-examples").addEventListener("click",()=>window.poetryGallery.showExamples());
+$("retry-archive").addEventListener("click",()=>void refreshGallery());
 async function refreshOwner(){
   const result=await api("session");isAdmin=Boolean(result.owner);
   $("login-form").hidden=isAdmin;$("admin-workspace").hidden=!isAdmin;
-  status(isAdmin?"管理员已登录":"请输入授权手机号并获取验证码。");
+  status(isAdmin?"管理员已登录":"管理功能暂未开放。");
   if(isAdmin)await loadPoems();
 }
 async function loadPoems(){
@@ -153,6 +152,7 @@ async function initialize(){
   $("login-form").hidden=false;
   $("admin-workspace").hidden=true;
   status("管理登录即将改用手机通行密钥（Passkey）。目前管理功能尚未开放，绝不允许匿名编辑。");
+  window.poetryGallery.route();
   await refreshGallery();
   document.addEventListener("visibilitychange",()=>{
     if(!document.hidden)void refreshGallery();

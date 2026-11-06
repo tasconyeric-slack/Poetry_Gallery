@@ -57,13 +57,13 @@ async function handler(request,env) {
   if(request.method==="GET") {
     if(op==="health") return json({ok:true,backend:"d1",auth:"pending"});
     if(op==="list") {
-      const {results}=await env.DB.prepare("SELECT id,title,body,genre,note,composed_on,published_at,cover_id FROM poems WHERE status='published' ORDER BY published_at DESC").all();
+      const {results}=await env.DB.prepare("SELECT id,title,author,body,genre,note,composed_on,published_at,cover_id FROM poems WHERE status='published' ORDER BY published_at DESC").all();
       return json({poems:results});
     }
     if(op==="detail") {
       const id=url.searchParams.get("id")||"";
       if(!/^[a-f0-9-]{36}$/.test(id))return error("Not found",404);
-      const poem=await env.DB.prepare("SELECT id,title,body,genre,note,composed_on,published_at,cover_id FROM poems WHERE id=? AND status='published'").bind(id).first();
+      const poem=await env.DB.prepare("SELECT id,title,author,body,genre,note,composed_on,published_at,cover_id FROM poems WHERE id=? AND status='published'").bind(id).first();
       return poem?json({poem}):error("Not found",404);
     }
     if(op==="session")return json({owner:await isOwner(request,env)});
