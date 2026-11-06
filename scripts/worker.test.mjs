@@ -10,7 +10,7 @@ const jpeg=Buffer.from([255,216,255,224,1,2,3,4,5,6,7,8]).toString("base64");
 const sqlSeen=[];
 const env={DB:{prepare(sql){const q={sql,params:[]};sqlSeen.push(q);return{
   bind(...params){q.params=params;return this;},
-  async all(){if(sql.includes("status='published'"))return {results:[published]};throw Error("Unexpected list SQL");},
+  async all(){if(sql.includes("SELECT version"))return {results:[]};if(sql.includes("status='published'"))return {results:[published]};throw Error("Unexpected list SQL");},
   async first(){
     if(sql.includes("FROM poems WHERE id=? AND status='published'"))return q.params[0]===id1?published:null;
     if(sql.includes("FROM covers c INNER JOIN poems")) {

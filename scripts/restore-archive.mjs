@@ -7,8 +7,12 @@ export function restoreArchive(db,archive){
  if(archive.format!=='poetry-gallery-backup-v2'||!Array.isArray(archive.poems)||!Array.isArray(archive.revisions)||!Array.isArray(archive.covers))throw Error('Incomplete archive');
  if(archive.poems.length)validate(archive.poems);
  const ids=new Set(archive.poems.map(p=>p.id));
+ const coverIds=new Map(archive.covers.map(c=>[c.id,c.poem_id]));
+ if(coverIds.size!==archive.covers.length)throw Error('Duplicate cover');
+ for(const p of archive.poems)if(!Number.isInteger(p.version)||p.version<1||(p.cover_id&&coverIds.get(p.cover_id)!==p.id))throw Error('Invalid poem version or missing cover');
  for(const r of archive.revisions){validate([{...r,id:r.poem_id}]);if(!ids.has(r.poem_id)||!Number.isInteger(r.version)||r.version<1||r.version>=archive.poems.find(p=>p.id===r.poem_id)?.version)throw Error('Invalid revision');}
  for(const c of archive.covers)if(!ids.has(c.poem_id)||!['image/jpeg','image/png','image/webp'].includes(c.media_type)||typeof c.base64!=='string'||c.base64.length>800000)throw Error('Invalid cover');
+ for(const r of archive.revisions)if(r.cover_id&&coverIds.get(r.cover_id)!==r.poem_id)throw Error('Missing revision cover');
  const tables=[['poems',archive.poems,['id','title','author','body','genre','note','composed_on','status','cover_id','created_at','updated_at','published_at','version']],['covers',archive.covers,['id','poem_id','media_type','base64','created_at']],['poem_revisions',archive.revisions,['poem_id','version','title','author','body','genre','note','composed_on','status','cover_id','saved_at']]];
  db.exec('BEGIN IMMEDIATE');
  try{for(const [table,rows,fields] of tables){const stmt=db.prepare(`INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields.map(()=>'?').join(',')})`);for(const row of rows)stmt.run(...fields.map(f=>row[f]??null));}db.exec('COMMIT');}
