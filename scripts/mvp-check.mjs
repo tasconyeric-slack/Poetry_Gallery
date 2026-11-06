@@ -6,15 +6,15 @@ for(const p of ["worker/index.js","cms.js","app.js","api/poetry.js","wrangler.to
 const worker=read("worker/index.js"),client=read("cms.js"),html=read("index.html");
 for(const op of ["list","detail","cover","owner-list","save","delete","upload"])
   assert.ok(worker.includes('"'+op+'"'), "missing "+op);
-for(const text of ["GATEWAY_KEY","ADMIN_AUTH_ENABLED","Access-Control-Allow-Origin","status='published'"])
+for(const text of ["POETRY_OWNER_TOKEN","authorization","Access-Control-Allow-Origin","status='published'"])
   assert.ok(worker.includes(text),"missing security rule "+text);
 for(const stale of ["sendTencentSms","TENCENT_SECRET_KEY","OWNER_PHONE","OTP_PEPPER","name=\"phone\"","send-code"])
   assert.ok(!(worker+html).includes(stale),"obsolete SMS flow "+stale);
 assert.match(client,/PUBLIC_API/);
 assert.match(client,/showExamples/);
-assert.match(html,/通行密钥/);
+assert.match(html,/作者令牌/);
 assert.match(html,/id="export-poem-image"/);
 assert.match(read("app.js"),/canvas.toBlob/);
 assert.ok(!read("worker\/migrations\/0001_poems.sql").includes("sms_requests"));
 assert.match(read("wrangler.toml"),/poetry-gallery-d1/);
-console.log("Published gallery structure and disabled admin checks passed.");
+console.log("Published gallery structure and local authoring checks passed.");

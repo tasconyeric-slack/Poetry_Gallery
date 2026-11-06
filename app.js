@@ -174,9 +174,12 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
     feedback.textContent = "这首诗篇幅较长，请使用链接分享或打印成 PDF。";
     return;
   }
+  const square=document.getElementById("card-format").value==="square";
+  if(square&&contentLines.length>9){feedback.textContent="方形诗卡容纳 9 行；请选竖版，或打印 PDF / 分享原文链接。";return;}
+  await document.fonts.ready;
   const canvas = document.createElement("canvas");
   canvas.width = 900;
-  canvas.height = Math.max(1250, 480 + contentLines.length * 66 + 220);
+  canvas.height = square?900:Math.max(1250, 480 + contentLines.length * 66 + 220);
   const ctx = canvas.getContext("2d");
   if (!ctx) {
     feedback.textContent = "当前浏览器不支持图片导出。";
@@ -204,9 +207,9 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
   ctx.lineTo(570, 327);
   ctx.stroke();
   ctx.fillStyle = ink;
-  ctx.font = '36px "Songti SC","Noto Serif CJK SC",serif';
+  ctx.font = square?'30px "Songti SC",serif':'36px "Songti SC","Noto Serif CJK SC",serif';
   contentLines.forEach((line, index) => {
-    ctx.fillText(line, 450, 406 + index * 66, 750);
+    ctx.fillText(line, 450, (square?355:406) + index * (square?42:66), 750);
   });
   ctx.fillStyle = accent;
   ctx.font = "23px serif";
@@ -304,6 +307,7 @@ window.addEventListener("afterprint", () => {
 });
 
 window.poetryGallery = {
+  active:()=>activePoem,
   route: renderRoute,
   showExamples() {
     poems=demoPoems;
@@ -330,3 +334,14 @@ window.poetryGallery = {
 };
 renderGrid();
 renderRoute();
+
+document.getElementById("copy-poem-link").onclick=async()=>{
+ if(!activePoem)return;
+ try{await navigator.clipboard.writeText(location.href);feedback.textContent="作品链接已复制；微信预览可能仍显示网站通用信息。";}
+ catch{showManualShare(location.href);}
+};
+document.getElementById("make-video").onclick=async()=>{
+ if(!activePoem)return;
+ try{const {openVideoStudio}=await import("./video-studio.js");await openVideoStudio({...activePoem});}
+ catch{feedback.textContent="视频工作室加载失败，请刷新重试。";}
+};

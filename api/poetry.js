@@ -23,7 +23,8 @@ module.exports = async function handler(req,res) {
       method:req.method,
       headers:{"x-poetry-gateway-key":key,
         "content-type":"application/json",
-        "cookie":req.headers.cookie||""},
+        "authorization":req.headers.authorization||"",
+        "origin":origin||"https://"+req.headers.host},
       body:req.method==="POST"?JSON.stringify(req.body||{}):undefined
     });
     res.status(upstream.status);

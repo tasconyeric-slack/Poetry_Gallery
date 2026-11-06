@@ -19,6 +19,7 @@ jobs:
           node --check api/config.js
           node --check api/poetry.js
           node --check worker/index.js
+          node --check video-studio.js
       - name: Existing gallery smoke
         run: node scripts/smoke.mjs
       - uses: actions/setup-node@v4
@@ -37,3 +38,22 @@ jobs:
 
       - name: Private import SQL lifecycle
         run: node scripts/import-poems.test.mjs
+
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.65.0
+          npx playwright install --with-deps chromium
+      - name: Mobile local authoring integration
+        run: |
+          node scripts/local-test-server.mjs &
+          node scripts/browser-r2.test.mjs
+          node scripts/video.test.mjs
+          node scripts/browser-video.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: local-browser-evidence
+          path: |
+            .qa/*.png
+            .qa/*.mp4
+            .qa/*.webm
