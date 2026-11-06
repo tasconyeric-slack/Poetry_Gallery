@@ -210,7 +210,7 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
   });
   ctx.fillStyle = accent;
   ctx.font = "23px serif";
-  ctx.fillText("一字一句，皆有来处。", 450, canvas.height - 146);
+  ctx.fillText(activePoem.demo === false ? "一字一句，皆有来处。" : "古典诗词示例 · 非家庭原创", 450, canvas.height - 146);
   ctx.fillStyle = "#999b94";
   ctx.font = "20px sans-serif";
   ctx.fillText(location.origin + location.pathname, 450, canvas.height - 100, 760);
@@ -259,7 +259,10 @@ document.getElementById("share-poem").addEventListener("click", async () => {
       feedback.textContent = "可复制链接发送给家人。";
     }
   } catch (error) {
-    if (error && error.name === "AbortError") return;
+    if (error && error.name === "AbortError") { feedback.textContent = "已取消分享。"; return; }
+    if (navigator.clipboard && window.isSecureContext) {
+      try { await navigator.clipboard.writeText(url); feedback.textContent = "作品链接已复制，可粘贴到微信发送。"; return; } catch {}
+    }
     showManualShare(url);
     feedback.textContent = "可复制链接发送给家人。";
   }
