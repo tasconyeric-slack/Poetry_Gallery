@@ -28,6 +28,6 @@ try{
  const webmPromise=page.waitForEvent('download');await page.locator('#video-download').click();const webm=await webmPromise;assert.ok(webm.suggestedFilename().endsWith('.webm'));await webm.saveAs('.qa/poetry-fallback.webm');assert.equal(readFileSync('.qa/poetry-fallback.webm').subarray(0,4).toString('hex'),'1a45dfa3');
  await page.locator('#video-result').evaluate(v=>v.play());await page.waitForFunction(()=>document.querySelector('#video-result').currentTime>.5);
  await page.locator('#video-result').evaluate(v=>v.pause());await page.locator('#video-export').click();await page.locator('#video-cancel').click();await page.waitForFunction(()=>document.querySelector('#video-status').textContent.includes('已取消'));assert.equal(await page.locator('#video-download').isHidden(),true);
- await page.locator('#video-close').click();assert.equal(await page.locator('.video-studio').count(),0);assert.deepEqual(errors,[]);
+ await page.locator('#video-close').click();await page.locator('.video-studio').waitFor({state:'detached'});assert.deepEqual(errors,[]);
  console.log(JSON.stringify({result:'PASS',firstExport:name,metadata:meta,checks:'375px draft entry, 3 verse slides, 10s preview, real audio encode, download magic, playback, forced WebM fallback, cancel, cleanup',artifacts:'.qa/mobile-video.png, .qa/'+name+', .qa/poetry-fallback.webm'}));
 }finally{await browser.close();}

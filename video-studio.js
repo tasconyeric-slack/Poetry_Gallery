@@ -63,7 +63,7 @@ export async function openVideoStudio(poem){
  $('video-photo').onchange=async()=>{try{const f=$('video-photo').files[0];photo?.close();photo=null;if(f){if(f.size>8*1024*1024)throw Error('请选择 8 MB 以下图片。');photo=await createImageBitmap(f);if(photo.width*photo.height>40000000){photo.close();photo=null;throw Error('图片尺寸过大。');}}idle();}catch(e){message.textContent=e.message;}};
  async function run(record){
   if(running)return;$('video-result').pause();$('video-progress').value=0;lock(true);$("video-download").hidden=true;$("video-result").hidden=true;let stream=null,recorder=null,audioContext=null,source=null,timer=null;
-  let cancelled=false,encodingError=null;cancel=()=>{cancelled=true;};
+  let cancelled=false,encodingError=null,statusAfter=null;cancel=()=>{cancelled=true;};
   const hidden=()=>{if(document.hidden)cancelled=true;};document.addEventListener('visibilitychange',hidden);
   try{
    const seconds=duration(),timeline=buildTimeline(poem,seconds),audio=$('video-audio').files[0];
@@ -92,8 +92,8 @@ export async function openVideoStudio(poem){
     $('video-result').src=outputURL;$('video-result').hidden=false;$('video-download').href=outputURL;$('video-download').download='poetry-lyric.'+ext;$('video-download').hidden=false;$('video-download').textContent='下载 '+ext.toUpperCase()+' 视频';
     message.textContent='视频已生成，请播放检查后下载。格式：'+ext.toUpperCase()+'，'+seconds+' 秒。';
    }else message.textContent='预览结束，可生成视频。';
-  }catch(e){message.textContent=e.name==='AbortError'?'已取消；本次未生成文件。':e.message;}
-  finally{if(timer)clearInterval(timer);if(recorder&&recorder.state!=='inactive')recorder.stop();stream?.getTracks().forEach(t=>t.stop());try{source?.stop();}catch{}await audioContext?.close();document.removeEventListener('visibilitychange',hidden);cancel=null;lock(false);}
+  }catch(e){statusAfter=e.name==='AbortError'?'已取消；本次未生成文件。':e.message;}
+  finally{if(timer)clearInterval(timer);if(recorder&&recorder.state!=='inactive')recorder.stop();stream?.getTracks().forEach(t=>t.stop());try{source?.stop();}catch{}await audioContext?.close();document.removeEventListener('visibilitychange',hidden);cancel=null;lock(false);if(statusAfter)message.textContent=statusAfter;}
  }
  $('video-preview').onclick=()=>void run(false);$('video-export').onclick=()=>void run(true);idle();
 }
