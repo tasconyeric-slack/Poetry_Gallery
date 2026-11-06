@@ -1,0 +1,10 @@
+name = "poetry-gallery-api"
+main = "worker/index.js"
+compatibility_date = "2026-10-18"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "poetry-gallery-d1"
+database_id = "6f92588b-0a92-41c6-ad43-ae014f6112fe"
+migrations_dir = "worker/migrations"

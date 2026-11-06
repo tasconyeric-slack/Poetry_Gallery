@@ -1,37 +1,9 @@
-# Agent execution contract — Poetry Gallery
+# Poetry Gallery — enforce strict project isolation
 
-You are working on a **NEW, separate project**. Before changing anything, verify:
-- `git remote -v` points to `tasconyeric-slack/Poetry_Gallery`.
-- The Vercel target is the EXISTING `tasconyeric-slack/shici-archive` project.
-- Never touch `port-website`, `ccmacro`, `living-investment-thesis-agent`, or another repository or project.
-- Do not set up the custom domain yet.
+Repository is ONLY tasconyeric-slack/Poetry_Gallery. Existing Vercel target ONLY tasconyeric-slack/shici-archive. Domain shici.byliyz.com already linked. Never touch any other repositories, Vercel projects, Supabase databases or unrelated Cloudflare resources.
 
-## Highest-priority instruction
-**Ship a functioning mobile-first poetry website.** Do not spend cycles on speculative architecture, exhaustive research, designing a grand system, or delegating work to itself without committed code. If blocked by a third-party account or missing credentials, keep the public demo deployable; describe one precise human action, and implement the unblocked portions.
+Single-author Chinese poetry website, mobile/WeChat-first. Keep publicly published works readable without login. Independent Cloudflare D1 + Worker is authoritative. No Supabase or cron keepalive.
 
-## Required work order
-1. Verify the repo, current branch, files and existing Vercel project.
-2. Run or inspect the current demo; preserve working behavior.
-3. Implement the smallest end-to-end feature, commit the code, test it.
-4. Continue features in `docs/MVP_SPEC.md` until all P0 acceptance criteria pass.
-5. Check desktop/mobile and Vercel Preview. Report exact commit, PR and tested URL.
-6. Do not claim deployed/verified unless a deployment status and HTTP page were actually checked.
+Owner login design is WebAuthn Passkey; implementation is DEFERRED. Do not implement insecure bypasses or enable owner write access before safe one-person enrollment/recovery and security verification. Phone SMS abandoned due to enterprise qualification; do not reinstate it.
 
-## Product boundaries
-- Initial owner is one family member, not a multi-tenant social network.
-- The site is mainly read on mobile and on WeChat's in-app browser.
-- Visitors can browse published poems without signing in.
-- Only authenticated owner can author, edit, publish and delete.
-- Drafts and owner interface must never leak through public APIs or search.
-- Keep personal poems private until the owner intentionally publishes.
-- Database-backed storage is required for the functional MVP; browser localStorage alone is NOT persistence.
-- Do not introduce payments, comments, likes, recommendation feeds, AI writing, music or mini-programs in P0.
-- Phone/SMS sign-in is NOT required for P0; choose a low-cost email magic-link owner sign-in and document the setup. Never require a paid SMS service.
-- Do not publish invented poems as though they are the owner's real work. Current classical works are explicit demos.
-
-## Workflow
-- For new feature work, use a branch `feat/...` and a PR into `main`. Do not force-push.
-- Keep changes reviewable; do not block code creation on documentation approval.
-- Run available checks before proposing merge.
-- Never log or commit secrets or privileged Supabase service-role keys.
-- When database credentials are absent, create SQL/schema/migration instructions and an explicit `.env.example`; do not fabricate values.
+Continue feat/poetry-publishing-mvp and PR #1. Commit tested code; preserve working demo, visibility boundaries, share/print. Distinguish mock/CI checks from real browser and live auth tests. Never merge to main without owner approval.
