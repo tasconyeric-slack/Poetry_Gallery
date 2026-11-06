@@ -1,9 +1,21 @@
-# Poetry Gallery — enforce strict project isolation
+# Poetry Gallery — Release 2 implementation contract
 
-Repository is ONLY tasconyeric-slack/Poetry_Gallery. Existing Vercel target ONLY tasconyeric-slack/shici-archive. Domain shici.byliyz.com already linked. Never touch any other repositories, Vercel projects, Supabase databases or unrelated Cloudflare resources.
+Repository: ONLY `tasconyeric-slack/Poetry_Gallery`. Existing Vercel: `tasconyeric-slack/shici-archive`. Existing Cloudflare: `poetry-gallery-api` Worker and `poetry-gallery-d1` D1. No other repositories, sites, resources or DNS changes.
 
-Single-author Chinese poetry website, mobile/WeChat-first. Keep publicly published works readable without login. Independent Cloudflare D1 + Worker is authoritative. No Supabase or cron keepalive.
+## State and priority
+- PR #1 was **merged into main**. Earlier `feat/poetry-publishing-mvp` / PR #1 directions are obsolete. Never resume the old merged branch.
+- Master delivery Issue **#8**. **PR A:** implement **#9 authoring/cloud save, #10 durable archive, #11 social sharing** on `feat/poetry-authoring-archive-r2` off main; open/update only one PR to main. **PR B later:** **#12 lyric video + #13 integration**, separate branch/PR. **#14 Passkey is deferred**.
+- Actual MVP must let owner write, autosave, reopen, edit, publish, unpublish and archive poems from a phone, then share and produce a playable video. A read-only gallery or developer-only JSON import is not enough.
+- Do not stall first usable authoring delivery for video. Keep iterations short; check real critical path once.
 
-Owner login design is WebAuthn Passkey; implementation is DEFERRED. Do not implement insecure bypasses or enable owner write access before safe one-person enrollment/recovery and security verification. Phone SMS abandoned due to enterprise qualification; do not reinstate it.
+## Temporary owner publishing credential
+- Device-local drafts are usable without credentials; label them unsynced and allow export.
+- **Cloud private reads and ALL mutations must require server-verified owner credentials.** Release 2 may use a dedicated high-entropy (>=256-bit) `POETRY_OWNER_TOKEN` Cloudflare Worker secret entered by owner in UI and held in JS memory only. Do not commit, print, log, persist or put secrets in URL; no public cloud writes or drafts. Server-side validation plus specific origin restrictions.
+- This is a narrowly scoped interim capability, not a multi-account/login system. Passkey replacement later (#14). If Worker secret is not configured, show honest device-only mode and exact minimal setup instead of claiming successful publishing.
+- Add only forward database migrations; ensure save/restore/revisions/backup protect drafts and real content. Never seed fake family poems in production. Use synthetic local fixtures.
 
-Continue feat/poetry-publishing-mvp and PR #1. Commit tested code; preserve working demo, visibility boundaries, share/print. Distinguish mock/CI checks from real browser and live auth tests. Never merge to main without owner approval.
+## Video
+Use an on-demand lightweight browser lyric-video renderer: 9:16 timed Chinese text, optional owner-provided image/audio, actual playable MP4 when codec supports it or valid WebM fallback. No costly rendering backend. Consider Mediabunny, WebCodecs and browser capability checks; no unsupported claims or disguised file renaming. Do not bundle copyrighted audio.
+
+## Delivery
+Produce working commits, targeted tests and concise PR evidence. No overengineering, repeated audits, new Supabase/SMS, unrelated modifications or unsolicited production writes. Do not merge to main without user approval; no private production text imported without approval. Follow project-specific issue acceptance criteria over outdated Release 1 documents.
