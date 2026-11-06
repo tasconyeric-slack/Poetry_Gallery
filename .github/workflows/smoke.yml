@@ -48,9 +48,12 @@ jobs:
         run: |
           node scripts/local-test-server.mjs &
           node scripts/browser-r2.test.mjs
+          node scripts/browser-ui-share.test.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: local-browser-evidence
           path: |
             .qa/*.png
+
+

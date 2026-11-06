@@ -78,3 +78,17 @@
 #video-canvas{display:block;width:min(100%,270px);height:auto;margin:12px auto}#video-result{display:block;width:min(100%,270px);max-height:60vh;margin:18px auto}#video-result[hidden]{display:none}
 .video-controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.video-studio progress{width:100%}.video-studio button:disabled{opacity:.5}.video-studio a{display:block;text-align:center;margin-top:12px}.video-studio a[hidden]{display:none}
 @media(max-width:500px){.video-studio{padding:14px}.video-options{grid-template-columns:1fr}}
+
+/* Keep writing first, with readable controls on a family member's phone. */
+.cloud-access{margin:16px 0 24px}.cloud-access>summary{cursor:pointer;padding:14px;border:1px solid var(--line);font-size:16px}
+#editor-state{font-size:16px;color:#775039;line-height:1.8;background:#f7f5ef;padding:12px;border-left:3px solid #93654e}
+.admin-panel label,.admin-primary,.admin-secondary,.admin-danger,.admin-panel input:not([type=file]),.admin-panel select,.admin-panel textarea{font-size:16px}
+.admin-panel p,#admin-status,#admin-feedback{font-size:15px}.admin-item strong{font-size:18px}.admin-item small{font-size:14px}
+.admin-edit{border:0;background:transparent;display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;min-height:44px;color:var(--ink)}
+.admin-item a,.admin-actions a{display:inline-block;font-size:16px;padding:10px;color:var(--dark)}
+.admin-hint{scroll-margin-top:20px}.admin-actions a{text-decoration:none}
+.import-dialog{width:min(620px,92vw);max-height:90vh;overflow:auto;padding:24px;border:1px solid var(--line);background:var(--paper-light);color:var(--ink)}
+.import-dialog::backdrop{background:#23382bb3}.import-dialog p{line-height:1.9;font-size:16px}.import-dialog label{display:block;margin:18px 0;line-height:1.8}
+.import-dialog textarea,.import-dialog input{display:block;width:100%;max-width:100%;font-size:16px;margin-top:8px}.import-dialog textarea{padding:12px;line-height:1.8}
+.import-dialog form{text-align:right}.admin-toolbar button{flex:1 1 auto}
+#make-video,#draft-video{display:none!important}
