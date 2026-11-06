@@ -341,5 +341,7 @@ document.getElementById("copy-poem-link").onclick=async()=>{
  catch{showManualShare(location.href);}
 };
 document.getElementById("make-video").onclick=async()=>{
- feedback.textContent="视频工作室将在独立版本提供。当前可先导出诗卡或 PDF。";
+ if(!activePoem)return;
+ try{const {openVideoStudio}=await import("./video-studio.js");await openVideoStudio({...activePoem});}
+ catch{feedback.textContent="视频工作室加载失败，请刷新重试。";}
 };

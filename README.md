@@ -64,3 +64,24 @@ Browser integration (requires `npm install --no-save playwright` and installed C
     node scripts/browser-r2.test.mjs
 
 The test server binds loopback only, uses synthetic in-memory SQLite and the actual Worker. It never contacts Cloudflare. Browser requests to the configured Worker are intercepted into this local server. Covers draft/publish/unpublish/revisions/recovery and unauthorized boundaries are tested locally. No remote write or production completion is claimed before an authorized live check. Screenshot artifacts are in ignored .qa/. No real family content is in fixtures.
+
+## Lyric video studio (separate PR B)
+
+Open **制作视频** on a poem or **用当前草稿制作视频** in the editor. The studio is dynamically loaded and works without cloud credentials. Choose paper/dark, 10–45 seconds, optional local image (8 MB) and optional owned audio/voice (30 MB). No photo/audio/video is uploaded or stored in D1.
+
+A shared weighted timeline preserves verse/stanza boundaries with a title intro and outro, at 720×1280 and a 24fps capture target. Preview and export use the same renderer. Long poems explicitly require a separate excerpt rather than dropping text. Export happens in real time: keep the browser foregrounded; backgrounding cancels the current generation. A slow device may produce fewer frames. Use a supported desktop browser if a phone/webview cannot encode.
+
+The browser probes actual MediaRecorder MIME support: MP4/H.264 (+AAC for audio) where supported, otherwise genuine WebM/VP9 or VP8 (+Opus). The downloaded extension follows the actual recording container; WebM is never renamed to MP4. Watch the generated video before downloading. Cancellation creates no new download. A prior downloaded file remains yours. Browser MediaRecorder WebM can have an indefinite metadata duration although playback has the selected real elapsed duration. Optional local conversion, if FFmpeg is installed: `ffmpeg -i poetry-lyric.webm -c:v libx264 -pix_fmt yuv420p -c:a aac poetry-lyric.mp4`.
+
+Technical references: [MediaStream Recording specification](https://www.w3.org/TR/mediastream-recording/), [MediaRecorder format probing](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static), [Canvas capture](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/captureStream). No media library is bundled; native recording avoids an additional renderer dependency.
+
+Local checks with the synthetic test server running:
+
+    node scripts/video.test.mjs
+    node scripts/browser-video.test.mjs
+
+The browser test produces 10-second videos, checks container magic bytes, 720×1280 metadata and actual playback progress, optional synthetic audio, forced WebM fallback and cancel cleanup. Generated local evidence lives in ignored .qa/ and CI artifacts. Real WeChat/phone codec and system-share behavior still require owner-device verification. No production deployment or remote authoring test is claimed.
+
+### Actual Cloudflare local D1 check
+
+Also verified with Wrangler 4.158.0 / workerd local D1 (not just the Node SQLite adapter): apply `npx wrangler@4 d1 migrations apply poetry-gallery-d1 --local`, put a **synthetic test-only** token in ignored .dev.vars, and run `npx wrangler@4 dev --local --port 8787 --ip 127.0.0.1`. Start the static test server with POETRY_LOCAL_WORKER_URL=http://127.0.0.1:8787, then run browser-r2.test.mjs. This path forwards requests to the real local Worker/D1. Production resources remain untouched. `npx wrangler@4 deploy --dry-run` also passed.

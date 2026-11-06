@@ -29,3 +29,5 @@ private/
 .wrangler/
 
 .qa/
+
+.dev.vars*
