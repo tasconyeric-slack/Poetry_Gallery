@@ -20,3 +20,10 @@ test-results/
 !.env.example
 *.pem
 *.key
+
+# Private import inputs, backups, generated SQL and local D1
+private/
+*.private.json
+*.private.sql
+*.backup.sql
+.wrangler/
