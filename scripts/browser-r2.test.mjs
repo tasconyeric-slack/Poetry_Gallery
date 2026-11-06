@@ -1,0 +1,50 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {writeFileSync,mkdirSync,readFileSync} from 'node:fs';
+import {DatabaseSync} from 'node:sqlite';
+import {restoreArchive} from './restore-archive.mjs';
+mkdirSync('.qa',{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||(process.platform==='win32'?'C:/Users/Li Yuze/AppData/Local/ms-playwright/chromium-1254/chrome-win64/chrome.exe':undefined)});
+try{
+ let releaseDelete=null,deletePending=false;
+ const context=await browser.newContext({viewport:{width:375,height:812}});
+ await context.route('https://poetry-gallery-api.tasconyeric.workers.dev/**',async route=>{
+  const req=route.request();if(new URL(req.url()).searchParams.get('op')==='delete'){deletePending=true;await new Promise(resolve=>releaseDelete=resolve);}
+  const r=await fetch('http://localhost:8080/api'+new URL(req.url()).search,{method:req.method(),headers:{...req.headers(),origin:'http://localhost:8080'},body:req.postData()||undefined});
+  await route.fulfill({status:r.status,headers:Object.fromEntries(r.headers),body:Buffer.from(await r.arrayBuffer())});
+ });
+ const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://localhost:8080/#admin');
+ const body='窗前疏雨入秋声，\n灯下一笺记远行。\n\n明日云开山色净，\n且将新句寄归程。';
+ await page.locator('[name=title]').fill('联调测试·秋笺');await page.locator('[name=author]').fill('本地合成测试');await page.locator('[name=body]').fill(body);await page.reload();
+ await page.locator('[name=body]').waitFor();assert.equal(await page.locator('[name=body]').inputValue(),body);
+ assert.ok((await page.locator('#editor-state').innerText()).includes('本机'));
+ await page.screenshot({path:'.qa/mobile-authoring.png',fullPage:true});
+ await page.locator('#owner-token').fill('a'.repeat(64));await page.locator('#unlock-owner').click();await page.waitForFunction(()=>document.querySelector('#login-form').hidden);
+ await page.getByRole('button',{name:'保存草稿 / 撤回发布',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#admin-feedback').textContent.includes('云端已保存'));
+ let records=await (await fetch('http://localhost:8080/api?op=owner-list',{headers:{authorization:'Bearer '+'a'.repeat(64)}})).json();const id=records.poems[0].id;assert.equal(records.poems[0].author,'本地合成测试');
+ assert.equal((await fetch('http://localhost:8080/api?op=detail&id='+id)).status,404);
+ await page.locator('[name=note]').fill('合成测试附记');await page.getByRole('button',{name:'发布作品',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#admin-feedback').textContent.includes('可在公开诗集分享'));
+ await page.goto('http://localhost:8080/#poem/'+id);await page.waitForFunction(()=>document.querySelector('#reader-title').textContent==='联调测试·秋笺');assert.equal(await page.locator('#reader-poem').innerText(),body);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.locator('#export-poem-image').click();await page.locator('#share-image-output').waitFor({state:'visible'});assert.ok((await page.locator('#share-image-output').getAttribute('src')).startsWith('blob:'));
+ await page.screenshot({path:'.qa/mobile-share.png',fullPage:true});
+ await page.goto('http://localhost:8080/#admin');await page.locator('#admin-list button').first().click();await page.getByRole('button',{name:'保存草稿 / 撤回发布',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#admin-feedback').textContent.includes('私有草稿'));
+ const archive=await (await fetch('http://localhost:8080/api?op=backup',{headers:{authorization:'Bearer '+'a'.repeat(64)}})).json();assert.ok(archive.revisions.length>=2);
+ const recovery=new DatabaseSync(':memory:');for(const f of ['0001_poems.sql','0002_author.sql','0003_revisions.sql'])recovery.exec(readFileSync('worker/migrations/'+f,'utf8'));restoreArchive(recovery,archive);assert.equal(recovery.prepare('SELECT body FROM poems').get().body,body);assert.ok(recovery.prepare('SELECT COUNT(*) AS n FROM poem_revisions').get().n>=2);recovery.close();
+ for(const op of ['owner-list','backup','revisions','session'])assert.equal((await fetch('http://localhost:8080/api?op='+op)).status,403);
+ assert.equal((await fetch('http://localhost:8080/api?op=save',{method:'POST',headers:{authorization:'Bearer '+'b'.repeat(64),'content-type':'application/json'},body:'{}'})).status,403);
+ assert.equal((await fetch('http://localhost:8080/api?op=save',{method:'POST',headers:{authorization:'Bearer '+'a'.repeat(64),origin:'https://evil.example','content-type':'application/json'},body:'{}'})).status,403);
+ assert.equal((await fetch('http://localhost:8080/api?op=detail&id='+id)).status,404);
+ const local=await page.evaluate(()=>JSON.stringify(localStorage));assert.ok(!local.includes('a'.repeat(64)));assert.deepEqual(errors,[]);
+ const inconsistent=structuredClone(archive);inconsistent.revisions[0].version=inconsistent.poems[0].version;
+ const empty=new DatabaseSync(':memory:');assert.throws(()=>restoreArchive(empty,inconsistent),/Invalid revision/);empty.close();
+ await page.locator('#new-poem').click();await page.locator('[name=title]').fill('必须保留的本机草稿');await page.locator('[name=body]').fill('不能被另一首诗的删除影响');
+ await page.locator('#admin-list button').filter({hasText:'联调测试·秋笺'}).first().click();
+ page.once('dialog',d=>d.accept());await page.locator('#delete-poem').click();
+ while(!deletePending)await new Promise(r=>setTimeout(r,10));
+ assert.equal(await page.locator('#new-poem').isDisabled(),true);assert.equal(await page.locator('[name=body]').isDisabled(),true);
+ releaseDelete();await page.waitForFunction(()=>document.querySelector('#admin-feedback').textContent==='作品已删除。');
+ assert.ok(await page.evaluate(()=>localStorage.getItem('poetry-drafts-v2').includes('必须保留的本机草稿')));
+ console.log('375px browser: autosave/reload, owner SQLite draft/publish/reopen/unpublish, cold detail, PNG, complete archive recovery, auth/origin boundaries PASS');
+}finally{await browser.close();}

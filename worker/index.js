@@ -1,5 +1,4 @@
-// Poetry Gallery only: Cloudflare D1; public reading + owner APIs locked pending Passkey.
-// Public published works are readable directly from Workers.dev; mutations stay gated.
+// Poetry Gallery only: published reads plus server-verified owner capability APIs.
 const json = (body,status=200,headers={}) => new Response(JSON.stringify(body),{
   status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff",...headers}
 });
@@ -14,11 +13,13 @@ function cookieToken(request) {
   return match?.[1] || "";
 }
 async function isOwner(request,env) {
-  const raw=cookieToken(request);
-  if(!raw)return false;
-  const record=await env.DB.prepare("SELECT expires_at FROM owner_sessions WHERE token_hash=?")
-    .bind(await digest(raw)).first();
-  return Boolean(record && record.expires_at>now());
+  const configured=env.POETRY_OWNER_TOKEN;
+  if(typeof configured!=="string"||! /^[a-f0-9]{64,}$/i.test(configured))return false;
+  const supplied=request.headers.get("authorization")||"";
+  // Hash both values to equal-size buffers before comparing; never log the capability.
+  const a=await digest(supplied),b=await digest("Bearer "+configured);
+  let difference=0;for(let i=0;i<a.length;i++)difference|=a.charCodeAt(i)^b.charCodeAt(i);
+  return difference===0;
 }
 function error(message,status=400){return json({error:message},status);}
 function secretBytes() {
@@ -38,11 +39,12 @@ function inputPoem(body) {
   const text=String(body.body||"").replace(/\r\n/g,"\n").trim();
   const genre=String(body.genre||"其他");
   const note=String(body.note||"").trim();
+  const author=String(body.author||"").trim();
   const composed=body.composed_on?String(body.composed_on):null;
-  if(!title||title.length>120||!text||text.length>30000||
+  if(author.length>120||!title||title.length>120||!text||text.length>30000||
     !["五言","七言","词","其他"].includes(genre)||note.length>5000||
     (composed&&!/^\d{4}-\d{2}-\d{2}$/.test(composed)))throw Error("诗作字段无效");
-  return {title,body:text,genre,note,composed,status:body.status==="published"?"published":"draft"};
+  return {author,title,body:text,genre,note,composed,status:body.status==="published"?"published":"draft"};
 }
 async function handler(request,env) {
   if(!env.DB) return error("Database unavailable",503);
@@ -50,12 +52,13 @@ async function handler(request,env) {
   const op=url.searchParams.get("op")||"list";
   const publicRead=request.method==="GET"&&["list","detail","cover","health"].includes(op);
   if(!publicRead){
-    if(!env.GATEWAY_KEY||request.headers.get("x-poetry-gateway-key")!==env.GATEWAY_KEY)
-      return error("Forbidden",403);
-    if(env.ADMIN_AUTH_ENABLED!=="passkey") return error("Administrator login is not enabled",503);
+    const origin=request.headers.get("origin");
+    if(origin&&!allowedOrigins(env).includes(origin))return error("Origin rejected",403);
+    if(!env.POETRY_OWNER_TOKEN)return error("云端发布尚未配置 POETRY_OWNER_TOKEN，请先使用本机草稿。",503);
+    if(!await isOwner(request,env))return error("Forbidden",403);
   }
   if(request.method==="GET") {
-    if(op==="health") return json({ok:true,backend:"d1",auth:"pending"});
+    if(op==="health") return json({ok:true,backend:"d1",auth:env.POETRY_OWNER_TOKEN?"owner-token":"pending"});
     if(op==="list") {
       const {results}=await env.DB.prepare("SELECT id,title,author,body,genre,note,composed_on,published_at,cover_id FROM poems WHERE status='published' ORDER BY published_at DESC").all();
       return json({poems:results});
@@ -66,6 +69,10 @@ async function handler(request,env) {
       const poem=await env.DB.prepare("SELECT id,title,author,body,genre,note,composed_on,published_at,cover_id FROM poems WHERE id=? AND status='published'").bind(id).first();
       return poem?json({poem}):error("Not found",404);
     }
+    if(op==="revisions"){
+      const {results}=await env.DB.prepare("SELECT * FROM poem_revisions WHERE poem_id=? ORDER BY version DESC LIMIT 100").bind(url.searchParams.get("id")||"").all();
+      return json({revisions:results});
+    }
     if(op==="session")return json({owner:await isOwner(request,env)});
     if(op==="owner-list"){
       if(!await isOwner(request,env))return error("Unauthorized",401);
@@ -74,11 +81,12 @@ async function handler(request,env) {
     }
     if(op==="backup"){
       if(!await isOwner(request,env))return error("Unauthorized",401);
-      const [{results:poems},{results:covers}]=await Promise.all([
-        env.DB.prepare("SELECT * FROM poems ORDER BY created_at ASC").all(),
-        env.DB.prepare("SELECT id,poem_id,media_type,base64,created_at FROM covers ORDER BY created_at ASC").all()
+      const [{results:poems},{results:covers},{results:revisions}]=await env.DB.batch([
+        env.DB.prepare("SELECT * FROM poems ORDER BY created_at ASC"),
+        env.DB.prepare("SELECT id,poem_id,media_type,base64,created_at FROM covers ORDER BY created_at ASC"),
+        env.DB.prepare("SELECT * FROM poem_revisions ORDER BY poem_id,version")
       ]);
-      return json({format:"poetry-gallery-backup-v1",exported_at:new Date().toISOString(),poems,covers});
+      return json({format:"poetry-gallery-backup-v2",completeness:"all poems, revisions and inline covers",exported_at:new Date().toISOString(),poems,covers,revisions});
     }
     if(op==="cover") {
       const id=url.searchParams.get("id")||"";
@@ -86,9 +94,7 @@ async function handler(request,env) {
       const cover=await env.DB.prepare("SELECT c.base64,c.media_type,p.status FROM covers c INNER JOIN poems p ON p.id=c.poem_id WHERE c.id=? AND p.cover_id=c.id").bind(id).first();
       if(!cover)return error("Not found",404);
       if(cover.status!=="published"){
-        if(!env.GATEWAY_KEY||request.headers.get("x-poetry-gateway-key")!==env.GATEWAY_KEY
-          ||env.ADMIN_AUTH_ENABLED!=="passkey"||!await isOwner(request,env))
-          return error("Not found",404);
+        if(!await isOwner(request,env))return error("Not found",404);
       }
       const binary=atob(cover.base64);
       const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
@@ -106,21 +112,33 @@ async function handler(request,env) {
     return json({owner:false},200,{"set-cookie":"poetry_sid=; HttpOnly; Secure; SameSite=Lax; Path=/api/poetry; Max-Age=0"});
   }
   if(!await isOwner(request,env))return error("Unauthorized",401);
-  if(op==="save") {
-    let p;try{p=inputPoem(body);}catch(e){return error(e.message);}
-    const id=typeof body.id==="string"&&/^[a-f0-9-]{36}$/.test(body.id)?body.id:null;
-    const date=new Date().toISOString();
-    if(id) {
-      const old=await env.DB.prepare("SELECT published_at FROM poems WHERE id=?").bind(id).first();
+  if(op==="save"||op==="restore") {
+    let old=null;
+    if(body.id){
+      old=await env.DB.prepare("SELECT * FROM poems WHERE id=?").bind(String(body.id)).first();
       if(!old)return error("Not found",404);
-      await env.DB.prepare("UPDATE poems SET title=?,body=?,genre=?,note=?,composed_on=?,status=?,updated_at=?,published_at=? WHERE id=?")
-        .bind(p.title,p.body,p.genre,p.note,p.composed,p.status,date,p.status==="published"?(old.published_at||date):null,id).run();
-      return json({id});
+      if(body.version!==old.version)return error("云端已有新版本，请重新打开云端作品。当前本机修改仍保留，可导出。",409);
     }
-    const newid=crypto.randomUUID();
-    await env.DB.prepare("INSERT INTO poems(id,title,body,genre,note,composed_on,status,created_at,updated_at,published_at) VALUES(?,?,?,?,?,?,?,?,?,?)")
-      .bind(newid,p.title,p.body,p.genre,p.note,p.composed,p.status,date,date,p.status==="published"?date:null).run();
-    return json({id:newid});
+    if(op==="restore"){
+      if(!old)return error("Not found",404);
+      const revision=await env.DB.prepare("SELECT * FROM poem_revisions WHERE poem_id=? AND version=?").bind(old.id,body.revision).first();
+      if(!revision)return error("Revision not found",404);
+      body={...revision,id:old.id,version:old.version};
+    }
+    let p;try{p=inputPoem(body);}catch(e){return error(e.message);}
+    const id=old?.id||crypto.randomUUID(),date=new Date().toISOString();
+    if(old){
+      const unchanged=["title","author","body","genre","note","status"].every(k=>(old[k]||"")===p[k])&&(old.composed_on||null)===p.composed;
+      if(unchanged)return json({id,version:old.version});
+      // A single conditional UPDATE plus trigger makes revision + write atomic even for concurrent requests.
+      const result=await env.DB.prepare("UPDATE poems SET title=?,author=?,body=?,genre=?,note=?,composed_on=?,status=?,updated_at=?,published_at=?,version=version+1 WHERE id=? AND version=?")
+        .bind(p.title,p.author,p.body,p.genre,p.note,p.composed,p.status,date,p.status==="published"?(old.published_at||date):null,id,old.version).run();
+      if(!result.meta.changes)return error("云端版本冲突；本机修改仍保留。",409);
+      return json({id,version:old.version+1});
+    }
+    await env.DB.prepare("INSERT INTO poems(id,title,author,body,genre,note,composed_on,status,created_at,updated_at,published_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)")
+      .bind(id,p.title,p.author,p.body,p.genre,p.note,p.composed,p.status,date,date,p.status==="published"?date:null).run();
+    return json({id,version:1});
   }
   if(op==="delete") {
     const id=String(body.id||"");
@@ -152,31 +170,31 @@ async function handler(request,env) {
       env.DB.prepare("UPDATE poems SET cover_id=?,updated_at=? WHERE id=?")
         .bind(coverId,date,id)
     ];
-    if(old?.cover_id)commands.push(env.DB.prepare("DELETE FROM covers WHERE id=?").bind(old.cover_id));
+    // Keep former cover bytes for complete history backups; poem deletion cascades.
     await env.DB.batch(commands);
     return json({cover_id:coverId});
   }
   return error("Unknown action",404);
 }
+function allowedOrigins(env){
+  return ["https://shici.byliyz.com","https://shici-archive.vercel.app","http://localhost:8787","http://localhost:8080",...(env.OWNER_ORIGINS||"").split(",").map(x=>x.trim()).filter(Boolean)];
+}
 export default {
   async fetch(request,env) {
-    const path=new URL(request.url);
-    const op=path.searchParams.get("op")||"list";
-    const publicRead=request.method==="GET"&&["health","list","detail","cover"].includes(op);
-    if(request.method==="OPTIONS"&&["health","list","detail","cover"].includes(op)) {
-      return new Response(null,{status:204,headers:{
-        "Access-Control-Allow-Origin":"*",
-        "Access-Control-Allow-Methods":"GET, OPTIONS",
-        "Access-Control-Max-Age":"86400"
-      }});
+    const op=new URL(request.url).searchParams.get("op")||"list";
+    const publicRead=["health","list","detail","cover"].includes(op)&&!request.headers.has("authorization");
+    const origin=request.headers.get("origin");
+    const permitted=origin&&allowedOrigins(env).includes(origin);
+    if(request.method==="OPTIONS"){
+      if(!publicRead&&!permitted)return error("Origin rejected",403);
+      return new Response(null,{status:204,headers:{"Access-Control-Allow-Origin":permitted?origin:"*","Access-Control-Allow-Methods":publicRead?"GET, OPTIONS":"GET, POST, OPTIONS","Access-Control-Allow-Headers":"authorization, content-type","Vary":"Origin"}});
     }
     let response;
     try{response=await handler(request,env);}
-    catch(err){console.error("Poetry API failure",err?.name||"unknown");response=error("Internal error",500);}
-    if(publicRead){
-      response=new Response(response.body,response);
-      response.headers.set("Access-Control-Allow-Origin","*");
-    }
+    catch{response=error("Internal error",500);}
+    response=new Response(response.body,response);
+    if(permitted||publicRead)response.headers.set("Access-Control-Allow-Origin",permitted?origin:"*");
+    response.headers.set("Vary","Origin");
     return response;
   }
 };

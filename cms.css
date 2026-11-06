@@ -65,3 +65,9 @@
 .share-image-preview p{font-size:12px;color:var(--muted);line-height:1.8}
 .share-image-preview img{display:block;width:100%;height:auto;margin-top:10px;object-fit:contain}
 @media print{.share-image-preview{display:none!important}}
+#poem-preview,#revision-list pre{white-space:pre-wrap;overflow-wrap:anywhere;font:17px/2 var(--serif);padding:16px;background:#f7f5ef;border:1px solid var(--line)}
+.admin-item{flex-direction:column;align-items:flex-start}.admin-item small{white-space:normal;font-size:11px}
+#revision-list details{margin:12px 0}#revision-list pre{max-height:300px;overflow:auto}
+.reader-actions{flex-wrap:wrap}.reader-actions select{max-width:100%;padding:8px}
+
+@media(max-width:720px){.admin-layout>.admin-editor{order:-1}}
