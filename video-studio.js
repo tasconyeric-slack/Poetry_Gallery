@@ -31,7 +31,7 @@ export function drawFrame(canvas,poem,timeline,time,theme='paper',photo=null){
   ctx.font='28px "Songti SC","Noto Serif CJK SC",serif';author.forEach((l,i)=>ctx.fillText(l,360,900+i*32,600));
   if(slide.kind==='outro'){ctx.font='24px serif';ctx.fillText('一字一句，皆有来处。',360,1120);}
  }
- ctx.globalAlpha=1;ctx.fillStyle=dark?'#b9c7bd':'#85634c';ctx.font='20px serif';ctx.fillText(poem.demo?'古典诗词示例':'原创诗作 · '+(poem.composedOn||poem.composed_on||''),360,1180);
+ ctx.globalAlpha=1;ctx.fillStyle=dark?'#b9c7bd':'#85634c';ctx.font='20px serif';ctx.fillText(poem.demo!==false?'古典诗词示例':'原创诗作 · '+(poem.composedOn||poem.composed_on||''),360,1180);
 }
 let existing=null;
 export async function openVideoStudio(poem){
