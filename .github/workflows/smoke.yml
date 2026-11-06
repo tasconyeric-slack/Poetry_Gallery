@@ -55,5 +55,3 @@ jobs:
           name: local-browser-evidence
           path: |
             .qa/*.png
-
-
