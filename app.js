@@ -100,7 +100,7 @@ async function renderRoute() {
   const admin = document.getElementById("admin-view");
   const isAdmin = route === "admin";
   const isPoem = route.startsWith("poem/");
-  let poem = isPoem ? poems.find(p => p.id === route.slice(5)) : null;
+  let poem = isPoem ? (poems.find(p => p.id === route.slice(5)) || demoPoems.find(p => p.id === route.slice(5))) : null;
   let detailError = null;
   if (isPoem && !poem && window.poetryGallery?.loadDetail) {
     catalog.hidden = true; reading.hidden = false; admin.hidden = true;

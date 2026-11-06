@@ -27,3 +27,5 @@ private/
 *.private.sql
 *.backup.sql
 .wrangler/
+
+.qa/
