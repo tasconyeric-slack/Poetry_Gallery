@@ -157,3 +157,9 @@ status("本机模式 · 输入自动保存，云端需要作者权限");renderLi
 if(drafts[0])void openPoem(drafts[0]);
 window.poetryDraftForVideo=()=>({...snapshot(),lines:get("body").split("\n"),demo:false});
 void refreshGallery();
+
+$("draft-video").onclick=async()=>{
+ autosaveIfChanged();
+ try{const {openVideoStudio}=await import("./video-studio.js");await openVideoStudio(window.poetryDraftForVideo());}
+ catch(e){feedback("视频工作室加载失败："+e.message);}
+};
