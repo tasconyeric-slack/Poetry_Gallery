@@ -93,7 +93,7 @@
           <button type="button" id="share-poem">分享这首诗 ↗</button>
           <label>诗卡格式<select id="card-format"><option value="vertical">竖版</option><option value="square">方形</option></select></label>
           <button type="button" id="copy-poem-link">复制链接</button>
-          <button type="button" id="make-video">制作视频</button>
+          <button type="button" hidden id="make-video">制作视频</button>
           <button type="button" id="export-poem-image">生成分享诗卡</button>
           <button type="button" id="print-poem">打印 / 保存为 PDF</button>
         </div>
@@ -119,18 +119,20 @@
         <p>本机草稿自动保存；浏览器数据清除后会丢失，请定期导出。只有明确发布后才会公开。</p>
       </div>
       <p id="admin-status" role="status" aria-live="polite">正在连接后台…</p>
-      <div id="login-form" class="admin-panel">
+      <details class="cloud-access"><summary>云端存档 · 解锁作者权限</summary><div id="login-form" class="admin-panel">
         <h2>解锁云端存档</h2>
-        <label>作者令牌<input id="owner-token" type="password" autocomplete="off" spellcheck="false" /></label>
+        <label>作者密钥<input id="owner-token" type="password" autocomplete="off" spellcheck="false" /></label>
         <button type="button" id="unlock-owner" class="admin-primary">解锁云端</button>
-        <p>令牌仅在当前页面内存保存，刷新即清除。本机草稿无需解锁。</p>
-        <p>首次使用需配置云端发布（操作步骤见项目 README）。未配置时可继续写作并导出本机草稿。</p>
+        <p>密钥仅在当前页面临时使用，刷新后需重新解锁。本机草稿无需解锁。</p>
+        <p>没有密钥也可以写作、导入和导出本机草稿。请向网站管理者索取密钥。</p>
       </div>
+      </details>
       <div id="admin-workspace" hidden>
         <div class="admin-toolbar">
           <button type="button" id="new-poem" class="admin-primary">＋ 新建诗作</button>
+          <button type="button" id="import-poem" class="admin-secondary">导入已有作品</button>
           <button type="button" id="export-backup" class="admin-secondary">导出完整备份</button>
-          <button type="button" id="sign-out" class="admin-secondary">退出登录</button>
+          <button type="button" id="sign-out" class="admin-secondary">锁定云端</button>
         </div>
         <div class="admin-layout">
           <div class="admin-panel">
@@ -143,26 +145,29 @@
           </div>
           <form id="poem-form" class="admin-panel admin-editor">
             <h2 id="editor-heading">新建诗作</h2>
+            <p id="editor-state" class="admin-hint" role="status" aria-live="polite"></p>
             <label>标题<input name="title" maxlength="120" required placeholder="输入诗名" /></label>
             <label>作者<input name="author" maxlength="120" placeholder="署名" /></label>
             <label>正文<textarea name="body" maxlength="30000" rows="12" required placeholder="写下诗句，换行会保留"></textarea></label>
             <div class="admin-fields">
-              <label>体裁<select name="genre"><option>五言</option><option>七言</option><option>词</option><option>其他</option></select></label>
+              <label>体裁<select name="genre"><option value="">未选体裁</option><option>五言</option><option>七言</option><option>词</option><option>其他</option></select></label>
               <label>创作日期（可选）<input name="composed_on" type="date" /></label>
             </div>
             <label>附记（可选）<textarea name="note" maxlength="5000" rows="3" placeholder="写给这首诗的说明"></textarea></label>
             <div class="admin-cover">
-              <label>配图（保存草稿后可上传）<input id="cover-upload" type="file" accept="image/*" /></label><p>自动压缩为 JPEG（550 KB 内），暂不需要额外购买图片存储服务。</p>
+              <label>配图（保存草稿后可上传）<input id="cover-upload" type="file" accept="image/*" /></label><p>支持 8 MB 以下图片，自动压缩。未发布作品的配图仅作者可读。</p>
               <button type="button" class="admin-secondary" id="upload-cover">上传配图</button>
               <img id="admin-cover-preview" alt="当前配图" hidden />
             </div>
             <pre id="poem-preview" aria-label="诗作预览"></pre>
             <button type="button" id="export-local" class="admin-secondary">导出本机草稿</button>
-            <button type="button" id="draft-video" class="admin-secondary">用当前草稿制作视频</button>
+            <button type="button" hidden id="draft-video" class="admin-secondary">用当前草稿制作视频</button>
             <div id="revision-list"></div>
-            <p id="editor-state" class="admin-hint"></p>
+
             <div class="admin-actions">
-              <button type="submit" class="admin-secondary" data-save-status="draft">保存草稿 / 撤回发布</button>
+              <button type="submit" class="admin-secondary" id="save-cloud" data-save-status="draft">保存到云端</button>
+              <button type="button" id="withdraw-poem" class="admin-secondary" hidden>撤回发布</button>
+              <a id="editor-public-link" class="admin-secondary" hidden>阅读 / 分享原文</a>
               <button type="submit" class="admin-primary" data-save-status="published">发布作品</button>
               <button type="button" class="admin-danger" id="delete-poem" hidden>删除作品</button>
             </div>
@@ -171,6 +176,15 @@
       </div>
       <p id="admin-feedback" role="status" aria-live="polite"></p>
     </section>
+    <dialog id="import-dialog" class="import-dialog">
+      <form method="dialog"><button class="admin-secondary">关闭</button></form>
+      <h2>导入已有作品</h2>
+      <p>粘贴文字，或选择 TXT / Markdown 文件（最大 256 KB）。导入后请确认标题和正文，仅保存到本机，不会自动发布。当前编辑的作品会保留。</p>
+      <label>选择文件<input id="import-file" type="file" accept=".txt,.md,text/plain,text/markdown" /></label>
+      <label>粘贴整首诗<textarea id="import-text" rows="10" placeholder="诗名（可选）&#10;&#10;正文"></textarea></label>
+      <p id="import-feedback" role="status"></p>
+      <button id="confirm-import" type="button" class="admin-primary">导入为新草稿</button>
+    </dialog>
     <section id="anthology-print" aria-label="诗集打印版" hidden></section>
   </main>
 
