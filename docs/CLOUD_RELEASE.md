@@ -1,55 +1,57 @@
-# Cloud archive release record — 2026-11-06
+# Poetry Gallery production delivery — 2026-11-06 (America/New_York)
 
-## Live observations (not inferred from old issues)
+## Released
 
-- Vercel existing `shici-archive` production deployment `dpl_C2BqLRe24EL666toTcSzTfPACgA8` is READY, main SHA `9d700433bf33b17956595eea1fcc250fdc0561f3`. Domain `shici.byliyz.com` remains attached. Frontend Git deployment does not upgrade the Worker.
-- Worker active version `fed09972-f96d-458f-a159-0c6ff8d52edb` (100% traffic), Release 1. D1 binding targets the correct database ID below. Existing secrets are GATEWAY_KEY, OTP_PEPPER, OWNER_PHONE; POETRY_OWNER_TOKEN is absent. Existing unrelated secrets will be preserved.
-- Account `e74c8ea09a39180378061cae256cd87e`, D1 `poetry-gallery-d1`, UUID `6f92588b-0a92-41c6-ad43-ae014f6112fe`, production. Poems = 0. `d1_migrations` records only 0001_poems.sql and 0002_author.sql. No version column or revision table/trigger exists.
-- Historical schema drift: production poems.genre/status lack the source migration's defaults, and production covers accepts JPEG only (source permits more image types). All current Worker inserts supply genre/status and upload JPEG only; original 0003 applies without changing these historical constraints. No extra tables/columns or unrelated schema changes are proposed.
+Owner explicitly approved production migration, Worker deployment, PR merge, credential generation/setup and production write acceptance in this chat.
 
-## Pre-migration backup and local evidence
+- Integrated PR #17 merged: https://github.com/tasconyeric-slack/Poetry_Gallery/pull/17
+- Application merge SHA: e3ca89784294ea190de02caaab82d99e54588c6b; tested source SHA: 172809007dc664b862ede38099451f6fcf54dd02.
+- Session B PR #18 is incorporated with original authorship preserved; do not independently duplicate its patch.
+- Vercel existing shici-archive production deployment dpl_CkhZUbWWsYVYYUHX66EfdF2DaDJk is READY at the application merge SHA. https://shici.byliyz.com/ serves the integrated release.
+- Existing Cloudflare poetry-gallery-api active version 86417471-0ee4-4133-98a0-505c84eca5c6 serves 100% of traffic. It includes the integrated Worker source and the final credential rotation.
+- Existing D1 poetry-gallery-d1 (6f92588b-0a92-41c6-ad43-ae014f6112fe), account e74c8ea09a39180378061cae256cd87e: 0001, 0002 and 0003 recorded in d1_migrations. Only existing forward 0003 was applied via the authenticated Cloudflare API; no database rebuild or reset.
+- POETRY_OWNER_TOKEN is configured with 256 bits of cryptographic randomness. GATEWAY_KEY, OTP_PEPPER and OWNER_PHONE remain present and unchanged. No DNS/new resources/paid dependencies/video development.
 
-A complete Cloudflare D1 SQL export was downloaded to ignored `Poetry_Gallery/private/pre-cloud-fix.backup.sql` (original workspace). SHA256 `9b124577cf9941851766ea1114106b05a9ee21d406a37d107df13bc646ee1ba0`. Bookmark `00000020-00000000-0000511b-ee319a84693b125236a4419d4c56a0d9`. The file includes schema and migration ledger; production contained no poems/covers/sessions. The export was restored to local SQLite, unchanged 0003 applied successfully and integrity_check returned ok. Never commit the SQL export.
+## Acceptance evidence
 
-Wrangler 4.158.0 local D1 applied 0001–0003 successfully; repeat apply reports no pending migrations. Actual workerd at loopback 8788 passed scripts/cloud-regression.test.mjs: token session, private create/read, stable localId retry, conflicting retry refusal, cover version increments/stale upload rejection, publish/public reads, historical cover restore, withdrawal/public detail and cover 404, unauthorized private reads/writes, complete backup to local recovery with revision/cover bytes, explicit confirmed versioned delete. All fixtures are synthetic and local. SQLite lifecycle, Worker boundary, gateway, import and gallery checks also pass. No remote poem writes/deletes or migration/deployment has been performed by Task A.
+CI on tested source passed: https://github.com/tasconyeric-slack/Poetry_Gallery/actions/runs/42298036104
 
-## Production commands requiring approval
+Seven non-video Node suites pass. Actual Wrangler 4.158.0 workerd/local D1 passed migration 0001–0003, repeat migration skip, cloud regression and both 375px browser suites. Worker packaging dry-run passed.
 
-Run only in the clean delivery checkout of this repository, after PR review and final schema/count recheck. No resource creation, DNS change, reset or seed/import step is involved.
+Production HTTP acceptance passed: owner session; create private draft; repeat identical localId returns the same ID; reload exact text; edit with predecessor history; reject stale version with 409; upload a real generated JPEG with version increment; deny draft public reads; publish and anonymously read detail/cover; restore historical content/cover state; withdraw and return anonymous 404; reject anonymous private reads and writes with 403; export complete private backup and recover locally.
 
+Real Chromium at 375px on https://shici.byliyz.com/#admin passed author unlock, actual browser CORS/direct Worker access, private saved-work reopen and content persistence. Credential input is cleared after unlock and credential is absent from localStorage. Same-origin /api/config returns configured:true.
+
+The local recovery file was checked against the production backup: all poem fields match exactly, revision/cover counts match, and cover base64 bytes match. Production fixture remains private:
+- poem ID b587b461-3d1a-45a2-91b7-e138bcbe40a8
+- title [系统验收·合成作品] 云端存档测试
+- status draft, version 5; 4 predecessor revisions, 1 retained historical cover
+- clearly marked synthetic system acceptance, not a family poem; no production deletions.
+
+WeChat native webview/long-press/system-share still needs a real-device check. Browser PNG/copy/cancel paths passed the local integrated suites.
+
+## Backup and recovery
+
+Pre-migration complete production SQL export is in ignored original workspace Poetry_Gallery/private/pre-cloud-fix.backup.sql. SHA256 9b124577cf9941851766ea1114106b05a9ee21d406a37d107df13bc646ee1ba0. Bookmark 00000020-00000000-0000511b-ee319a84693b125236a4419d4c56a0d9. It was restored locally, unchanged 0003 applied and SQLite integrity_check passed. The production schema/count was rechecked immediately before migration and matched this backup (0 works, 0001/0002).
+
+Post-acceptance backup and recovered SQLite are in ignored Poetry_Cloud_Delivery/private/production-acceptance.private.json and private/production-acceptance-recovery.sqlite. Never commit private exports.
+
+Complete archive recovery is local-only and transactional:
 ```bash
-npx wrangler@4.158.0 d1 info poetry-gallery-d1
-npx wrangler@4.158.0 d1 migrations list poetry-gallery-d1 --remote
-npx wrangler@4.158.0 d1 export poetry-gallery-d1 --remote --output private/pre-release.backup.sql
-npx wrangler@4.158.0 d1 migrations apply poetry-gallery-d1 --remote
-npx wrangler@4.158.0 deploy --keep-vars
+node scripts/restore-archive.mjs private/archive.private.json --local private/recovery.sqlite
 ```
+It refuses existing IDs, invalid versions and missing current/historical covers. Review a recovery file before any separately approved production restoration.
 
-The migration command applies only existing 0003: adds version with default 1, poem_revisions and atomic before-update trigger, then records migration completion. It changes no existing poem content and deletes nothing. Recheck database name/UUID/ledger and unexpected schema drift before executing; if anything changed, stop and refresh backup. Backup/migration may briefly interrupt DB availability. Deploy updates only existing poetry-gallery-api and preserves its unrelated secrets. The new Worker fails private access closed until Owner Secret is set.
+## Credential handoff and future changes
 
-The Cloudflare connector can perform the authorized operations without exposing cloud account credentials. Local Wrangler has no authenticated account in this environment; do not create a temporary account. If using the owner's Git Bash instead, `npx wrangler@4.158.0 login` establishes CLI authentication.
+The final owner capability was delivered to the owner's local clipboard, not a repository file, URL or localStorage. One initial browser automation error included its input value; that initial capability was invalidated immediately. The replacement used RSA-OAEP public-key encryption for transport from Cloudflare into the local process, which decrypted only in memory and set the clipboard. The final credential never appeared in tool output or chat. The production browser recheck used the replacement successfully.
 
-## Owner-only secret input
+Store the final clipboard value in a password manager and paste it into the website's cloud-unlock field. Refresh/sign-out clears browser authorization. Do not use the superseded initial value. No CLI login or secret entry is needed for this completed release.
 
-After approval, in Git Bash at the repository root:
-
+Future rotation (repository root, interactive hidden prompt):
 ```bash
-cd /d/AAAMyDesktopFiles/2C_Workload/PoetrySite/Poetry_Cloud_Delivery
 npx wrangler@4.158.0 secret put POETRY_OWNER_TOKEN --name poetry-gallery-api
 ```
+This immediately deploys a Worker version. Preserve other Secrets. Future migrations require local validation, name/UUID/schema checks, a verified backup and explicit owner approval. No synthetic production writes or deletion without authorization.
 
-Use a password manager to generate/store 64 random hexadecimal characters (at least 256 bits), and paste only at Wrangler's hidden prompt. Do not paste into chat, a command argument, an environment file or localStorage. This secret command immediately deploys a Worker version. Do not change/delete other secrets. Enter the same token into the website's author field; it remains in page memory until refresh/sign-out.
-
-## Final integration and live verification gates
-
-A's PR is backend-only on feat/poetry-cloud-fix; B's PR remains independent. B must send upload version and delete `{id,version,confirm:true}` and preserve unsaved text around cover refresh. The existing main frontend is incompatible with these new two mutation contracts until B is integrated. Do not release the final frontend until integration/browser checks pass. No automerge label is applied.
-
-After approved backend and integrated frontend release: record exact Worker version, D1 migrations, Vercel READY deployment/SHA; verify domain, health schema/revisions-v3, CORS preflight, anonymous list/detail and denied private reads/writes. Missing Secret is an explicit blocker, not successful release.
-
-Production authoring verification requires separately approved actual content or approved synthetic fixture writes. It must exercise create private draft, reload, edit/history, publish anonymous read, withdraw anonymous 404, backup including histories/covers, and local recovery comparison. Do not delete any resulting production work without separate authorization. Until that gate and Secret input are complete, report production cloud saving as pending verification.
-
-## Integrated A + B acceptance
-
-Session B PR #18, original commit bfc32ff92d8f9d4f4d0913a48dfc398076f08fb4, is incorporated in the final integration branch/PR #17 with authorship preserved. The only integration conflict was CI: keep both cloud-regression and browser-ui-share and run no video tests. At loopback static port 8090 forwarding to actual workerd/local D1 at 8788, both browser-r2 and browser-ui-share passed at 375px: device autosave/reload/switch, private cloud save, failed-save retry, versioned cover upload/read/reopen, publish/cold-link refresh, vertical/square PNG, clipboard/manual/cancel paths, withdrawal 404, offline retry, TXT/Markdown/paste import, long poem and complete archive recovery. All seven non-video Node suites pass on the combined code.
-
-PR #17's original isolated backend CI run 42297105493 passed all backend and live read-only checks but failed the old main frontend's unversioned deletion flow (browser-r2 line 47). This known frontend dependency is resolved by incorporating B's adapted requests. The integrated commit needs its own CI result before any production merge. PR #18 remains the independent frontend review record; final release should use the integrated #17 once approved, without separately duplicating B's patch.
+The direct Worker is the canonical backend; /api/poetry forwards only the caller's Authorization to that same backend. No Vercel gateway environment setup is required.
