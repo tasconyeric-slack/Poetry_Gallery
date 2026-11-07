@@ -12,7 +12,7 @@ for(const stale of ["sendTencentSms","TENCENT_SECRET_KEY","OWNER_PHONE","OTP_PEP
   assert.ok(!(worker+html).includes(stale),"obsolete SMS flow "+stale);
 assert.match(client,/PUBLIC_API/);
 assert.match(client,/showExamples/);
-assert.match(html,/作者令牌/);
+assert.match(html,/作者密钥/);
 assert.match(html,/id="export-poem-image"/);
 assert.match(read("app.js"),/canvas.toBlob/);
 assert.ok(!read("worker\/migrations\/0001_poems.sql").includes("sms_requests"));

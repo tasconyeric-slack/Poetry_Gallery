@@ -6,7 +6,7 @@ import {resolve,extname} from 'node:path';
 const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');
 for(const f of ['0001_poems.sql','0002_author.sql','0003_revisions.sql'])db.exec(readFileSync('worker/migrations/'+f,'utf8'));
 const DB={prepare(sql){let args=[];const q={bind(...a){args=a;return q;},async first(){return db.prepare(sql).get(...args)||null;},async all(){return {results:db.prepare(sql).all(...args)};},async run(){if(/^SELECT/i.test(sql))return {results:db.prepare(sql).all(...args)};return {meta:{changes:Number(db.prepare(sql).run(...args).changes)}};}};return q;},async batch(qs){db.exec('BEGIN');try{const r=[];for(const q of qs)r.push(await q.run());db.exec('COMMIT');return r;}catch(e){db.exec('ROLLBACK');throw e;}}};
-const source=readFileSync('worker/index.js','utf8');
+const source=readFileSync(process.env.POETRY_TEST_WORKER_FILE||'worker/index.js','utf8');
 const {default:worker}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 const env={DB,POETRY_OWNER_TOKEN:'a'.repeat(64)};
 createServer(async(req,res)=>{
@@ -23,4 +23,4 @@ createServer(async(req,res)=>{
  const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.webm':'video/webm','.mp4':'video/mp4'};
  const bytes=readFileSync(file);res.writeHead(200,{'content-type':types[extname(file)]||'application/octet-stream','content-length':bytes.length});res.end(bytes);
  }catch{res.writeHead(404);res.end();}
-}).listen(8080,'127.0.0.1',()=>console.log('Synthetic local Worker + SQLite on localhost:8080'));
+}).listen(Number(process.env.POETRY_TEST_PORT||8080),'127.0.0.1',()=>console.log('Synthetic local Worker + SQLite on localhost:'+(process.env.POETRY_TEST_PORT||8080)));

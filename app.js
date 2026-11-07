@@ -102,7 +102,7 @@ async function renderRoute() {
   const isPoem = route.startsWith("poem/");
   let poem = isPoem ? (poems.find(p => p.id === route.slice(5)) || demoPoems.find(p => p.id === route.slice(5))) : null;
   let detailError = null;
-  if (isPoem && !poem && window.poetryGallery?.loadDetail) {
+  if (isPoem && !demoPoems.some(p=>p.id===route.slice(5)) && window.poetryGallery?.loadDetail) {
     catalog.hidden = true; reading.hidden = false; admin.hidden = true;
     activePoem = null;
     document.querySelector(".reader-actions").hidden = true;
@@ -110,7 +110,7 @@ async function renderRoute() {
     for (const id of ["reader-author","reader-genre","reader-poem","reader-note","reader-feedback"]) document.getElementById(id).textContent = "";
     for (const id of ["share-manual","share-image-preview","reader-cover","reader-demo-label"]) document.getElementById(id).hidden = true;
     try { poem = await window.poetryGallery.loadDetail(route.slice(5)); }
-    catch (error) { detailError = error; }
+    catch (error) { poem=null;detailError = error; }
     if (version !== routeVersion) return;
   }
   admin.hidden = !isAdmin;
@@ -161,7 +161,9 @@ document.addEventListener("keydown", event => {
 let previousShareImageUrl = null;
 document.getElementById("export-poem-image").addEventListener("click", async () => {
   if (!activePoem) return;
-  const contentLines = activePoem.lines.flatMap(raw => {
+  const target=activePoem;
+  document.getElementById("share-image-preview").hidden=true;
+  const contentLines = target.lines.flatMap(raw => {
     const chars = Array.from(raw);
     if (!chars.length) return [""];
     const chunks = [];
@@ -177,6 +179,7 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
   const square=document.getElementById("card-format").value==="square";
   if(square&&contentLines.length>9){feedback.textContent="方形诗卡容纳 9 行；请选竖版，或打印 PDF / 分享原文链接。";return;}
   await document.fonts.ready;
+  if(activePoem!==target)return;
   const canvas = document.createElement("canvas");
   canvas.width = 900;
   canvas.height = square?900:Math.max(1250, 480 + contentLines.length * 66 + 220);
@@ -220,6 +223,7 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
   ctx.fillText("#poem/" + activePoem.id, 450, canvas.height - 70, 760);
   try {
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if(activePoem!==target)return;
     if (!blob) throw Error("生成失败");
     if (previousShareImageUrl) URL.revokeObjectURL(previousShareImageUrl);
     const imageUrl = URL.createObjectURL(blob);
@@ -232,6 +236,8 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
     feedback.textContent = "图片生成失败，请改用链接分享。";
   }
 });
+
+function poemLink(poem){return location.origin+location.pathname+"#poem/"+encodeURIComponent(poem.id);}
 
 function showManualShare(url) {
   const area = document.getElementById("share-manual");
@@ -248,7 +254,7 @@ document.getElementById("share-manual-select").addEventListener("click", () => {
 });
 document.getElementById("share-poem").addEventListener("click", async () => {
   if (!activePoem) return;
-  const url = location.href;
+  const url = poemLink(activePoem);
   const title = `《${activePoem.title}》 · 诗词馆`;
   try {
     if (navigator.share) {
@@ -337,9 +343,13 @@ renderRoute();
 
 document.getElementById("copy-poem-link").onclick=async()=>{
  if(!activePoem)return;
- try{await navigator.clipboard.writeText(location.href);feedback.textContent="作品链接已复制；微信预览可能仍显示网站通用信息。";}
- catch{showManualShare(location.href);}
+ const url=poemLink(activePoem);
+ try{await navigator.clipboard.writeText(url);feedback.textContent="作品链接已复制，可粘贴到微信发送。";}
+ catch{showManualShare(url);feedback.textContent="自动复制不可用，请长按或选中链接复制到微信。";}
 };
+// Revalidate when returning to a reader tab; withdrawals must not use catalog cache.
+window.addEventListener("pageshow",()=>{if(location.hash.startsWith("#poem/"))void renderRoute();});
+window.addEventListener("visibilitychange",()=>{if(!document.hidden&&location.hash.startsWith("#poem/"))void renderRoute();});
 document.getElementById("make-video").onclick=async()=>{
  if(!activePoem)return;
  try{const {openVideoStudio}=await import("./video-studio.js");await openVideoStudio({...activePoem});}

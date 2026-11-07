@@ -1,10 +1,7 @@
-// Same-origin gateway. Do NOT expose the Cloudflare gateway secret to browsers.
+// Compatibility proxy to the canonical Worker. Forward only caller credentials.
 module.exports = async function handler(req,res) {
-  const base=process.env.POETRY_WORKER_URL;
-  const key=process.env.POETRY_GATEWAY_KEY;
-  if(!base||!key||!/^https:\/\/[a-z0-9.-]+\/?$/.test(base)) {
-    return res.status(503).json({error:"Poetry backend not configured"});
-  }
+  const base="https://poetry-gallery-api.tasconyeric.workers.dev";
+  res.setHeader("cache-control","no-store");
   if(!["GET","POST"].includes(req.method)) return res.status(405).json({error:"Method not allowed"});
   const origin=req.headers.origin;
   if(req.method==="POST") {
@@ -21,10 +18,11 @@ module.exports = async function handler(req,res) {
   try {
     const upstream=await fetch(base.replace(/\/$/,"")+"/?"+params.toString(),{
       method:req.method,
-      headers:{"x-poetry-gateway-key":key,
+      redirect:"error",signal:AbortSignal.timeout(15000),
+      headers:{
         "content-type":"application/json",
         "authorization":req.headers.authorization||"",
-        "origin":origin||"https://"+req.headers.host},
+        "origin":origin||"https://shici.byliyz.com"},
       body:req.method==="POST"?JSON.stringify(req.body||{}):undefined
     });
     res.status(upstream.status);
