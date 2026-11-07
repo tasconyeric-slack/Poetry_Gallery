@@ -22,3 +22,7 @@ This repository currently has no visible rulesets enforcing required checks. Ena
 `pull_request_target` is deliberately restricted to GitHub API metadata operations: the privileged workflow never checks out or executes code from the PR branch.
 
 If an otherwise eligible PR does not merge, inspect Actions → `Agent Auto Merge` and the PR's Checks tab. An owner can also check repository Settings → Actions → General → Workflow permissions for the GitHub Actions token's ability to write PRs. GitHub may block a merge for repository protection, conflicting changes or missing permissions, and the workflow never uses `--admin`.
+
+## One-click smoke test
+
+A ready-for-review, same-repository documentation PR exercises both stages: `Poetry Gallery checks` completes successfully and `Agent Auto Merge` merges the exact tested SHA without a merge label. This section was added by the automated-merge verification PR.
