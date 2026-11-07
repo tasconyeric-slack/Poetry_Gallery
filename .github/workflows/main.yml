@@ -1,38 +1,76 @@
-
-# .github/workflows/agent-auto-merge.yml
+# Never check out or execute PR code in this privileged workflow.
 name: Agent Auto Merge
 
 on:
+  workflow_run:
+    workflows: ["Poetry Gallery checks"]
+    types: [completed]
   pull_request_target:
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - labeled
-      - ready_for_review
+    types: [opened, reopened, ready_for_review, labeled, unlabeled]
 
 permissions:
+  actions: read
   contents: write
   pull-requests: write
 
 jobs:
-  auto-merge:
+  merge:
     if: >-
-      ${{
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        !github.event.pull_request.draft &&
-        contains(github.event.pull_request.labels.*.name, 'agent-automerge')
-      }}
+      github.event_name == 'pull_request_target' ||
+      (github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
-      - name: Enable auto merge
+      - name: Merge ready internal PRs only after the latest successful CI run
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          gh pr merge "$PR_NUMBER" \
-            --repo "$REPO" \
-            --auto \
-            --squash \
-            --delete-branch
+          set -euo pipefail
+
+          # workflow_run fires when CI finishes; pull_request_target covers a PR
+          # being marked ready or unblocked after its checks already passed.
+          if [[ "$EVENT_NAME" == 'workflow_run' ]]; then
+            head_sha=$(jq -r '.workflow_run.head_sha // empty' "$GITHUB_EVENT_PATH")
+            mapfile -t numbers < <(jq -r '.workflow_run.pull_requests[]?.number' "$GITHUB_EVENT_PATH")
+            if [[ "${#numbers[@]}" -eq 0 && -n "$head_sha" ]]; then
+              mapfile -t numbers < <(gh api "repos/$REPO/commits/$head_sha/pulls" --jq '.[].number')
+            fi
+          else
+            mapfile -t numbers < <(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")
+          fi
+
+          for number in "${numbers[@]}"; do
+            pr=$(gh api "repos/$REPO/pulls/$number")
+            if ! jq -e --arg repo "$REPO" '
+              .state == "open" and
+              .draft == false and
+              .base.ref == "main" and
+              .head.repo.full_name == $repo and
+              (([.labels[].name] | index("hold-merge")) == null) and
+              (([.labels[].name] | index("manual-merge")) == null)
+            ' <<< "$pr" >/dev/null; then
+              echo "PR #$number: draft, held, closed, or not an internal main PR; skipping"
+              continue
+            fi
+
+            sha=$(jq -r '.head.sha' <<< "$pr")
+            runs=$(gh api --method GET "repos/$REPO/actions/workflows/smoke.yml/runs" \
+              -f head_sha="$sha" -f event=pull_request -f per_page=30)
+            conclusion=$(jq -r --arg sha "$sha" --argjson number "$number" '
+              [.workflow_runs[] |
+                select(.event == "pull_request" and .head_sha == $sha and
+                       any(.pull_requests[]?; .number == $number))] |
+              sort_by(.id) | last | .conclusion // "pending"
+            ' <<< "$runs")
+            if [[ "$conclusion" != 'success' ]]; then
+              echo "PR #$number at $sha: CI is $conclusion; not merging"
+              continue
+            fi
+
+            # GitHub still enforces merge conflicts and any repository protection.
+            # The SHA lease prevents merging a newer, untested push.
+            echo "PR #$number: latest CI passed; squash merging $sha"
+            gh pr merge "$number" --repo "$REPO" --squash \
+              --delete-branch --match-head-commit "$sha"
+          done
