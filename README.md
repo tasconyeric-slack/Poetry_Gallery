@@ -55,3 +55,7 @@ POETRY_LOCAL_WORKER_URL=http://127.0.0.1:8788 node scripts/cloud-regression.test
 生产迁移、Secret 和最终合并/部署分别等待确认。先核对绑定和迁移表，导出备份并在本地验证，再应用现有前向 0003；不得重建/清空生产库或导入测试作品。完整命令、已核实状态及待验收项见 [云端发布记录](docs/CLOUD_RELEASE.md)。Vercel Git 部署只更新前端，不会自动部署 Worker 或迁移 D1。
 
 发布后的必要线上验证先做只读/拒绝测试。真实保存→发布→撤回→备份恢复闭环需要作者操作或单独批准的生产测试写入，未经授权不写入作品。微信真机长按、原生分享和 webview 行为由最终集成验收记录明确区分。
+
+## Issue21 reference reconstruction
+
+See [reference matrix](docs/CLONE_REFERENCE_MATRIX.md), [visual results/screenshots](docs/CLONE_VISUAL_RESULTS.md), [interaction evidence](docs/CLONE_INTERACTIONS.md) and [local/deploy instructions](docs/CLONE_RELEASE.md). Frontend includes focused writing, private library, collection management/order, favorites, typography, three PNG themes and full collection printing. Production migration0004 and Worker/frontend deployment remain separately approved steps.

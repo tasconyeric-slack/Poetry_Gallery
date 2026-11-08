@@ -58,14 +58,15 @@ function renderList(){
  const localIds=new Set(drafts.filter(p=>p.id).map(p=>p.id));
  const items=[...drafts,...ownPoems.filter(p=>!localIds.has(p.id))];
  const q=$("owner-search").value.toLowerCase(),genre=$("owner-genre").value,year=$("owner-year").value.trim();
- const filtered=items.filter(p=>[p.title,p.body,p.author].join(" ").toLowerCase().includes(q)&&(!genre||p.genre===genre)&&(!year||(p.composed_on||p.updated_at||p.local_updated_at||"").startsWith(year)));
+ let filtered=items.filter(p=>(!window.poetryOwnerStatus||window.poetryOwnerStatus==="all"||(window.poetryOwnerStatus==="draft"?p.status!=="published":p.status==="published"))&&[p.title,p.body,p.author].join(" ").toLowerCase().includes(q)&&(!genre||p.genre===genre)&&(!year||(p.composed_on||p.updated_at||p.local_updated_at||"").startsWith(year)));
+ filtered.sort(document.getElementById("owner-sort")?.value==="title"?(a,b)=>(a.title||"").localeCompare(b.title||"","zh-CN"):(a,b)=>(b.local_updated_at||b.updated_at||"").localeCompare(a.local_updated_at||a.updated_at||""));
  $("admin-list").replaceChildren();
  for(const p of filtered){
   const row=document.createElement("div");row.className="admin-item";
   const b=document.createElement("button");b.type="button";b.className="admin-edit";
   const t=document.createElement("strong"),st=document.createElement("small");t.textContent=p.title||"未命名草稿";
   st.textContent=(p.dirty||!p.id?"本机未同步":p.status==="published"?"已发布":"云端草稿")+" · "+(p.local_updated_at||p.updated_at||"").slice(0,16);
-  b.append(t,st);b.setAttribute("aria-label","继续编辑："+(p.title||"未命名草稿"));b.onclick=()=>{if(!saving)void openPoem(p);};row.append(b);
+  const excerpt=document.createElement("p");excerpt.className="library-excerpt";excerpt.textContent=(p.body||"").split("\n").slice(0,8).join("\n");b.append(t,st,excerpt);b.setAttribute("aria-label","继续编辑："+(p.title||"未命名草稿"));b.onclick=()=>{if(!saving){location.hash="admin";void openPoem(p);}};row.append(b);
   if(p.status==="published"&&p.id){const link=document.createElement("a");link.href="#poem/"+p.id;link.textContent="阅读 / 分享";row.append(link);}
   $("admin-list").append(row);
  }
@@ -89,7 +90,7 @@ async function openPoem(p){
  }catch(e){feedback("历史读取失败："+e.message);}
 }
 function autosaveIfChanged(){if(current&&fields.some(n=>get(n)!==(current[n]||"")))autosave();}
-form.addEventListener("input",()=>autosaveIfChanged()); // immediate writes also survive fast reloads and mobile backgrounding
+form.addEventListener("input",event=>{if(fields.includes(event.target.name))autosaveIfChanged();}); // immediate writes also survive fast reloads and mobile backgrounding
 async function save(op="save",extra={}){
  if(saving)return;
  autosaveIfChanged();
@@ -106,7 +107,7 @@ async function save(op="save",extra={}){
  finally{mutationBusy(false);updateState();}
 }
 form.addEventListener("submit",e=>{e.preventDefault();void save("save",{status:e.submitter?.id==="save-cloud"?(current?.status||"draft"):(e.submitter?.dataset.saveStatus||"draft")});});
-$("unlock-owner").onclick=async()=>{token=$("owner-token").value.trim();$("owner-token").value="";try{await api("session");await loadPoems();status("作者权限已解锁 · 密钥刷新后需重新输入");$("login-form").hidden=true;}catch(e){token="";feedback(e.message);}};
+$("unlock-owner").onclick=async()=>{token=$("owner-token").value.trim();$("owner-token").value="";try{await api("session");await loadPoems();status("作者权限已解锁 · 密钥刷新后需重新输入");$("login-form").hidden=true;window.dispatchEvent(new Event("poetry-owner-change"));}catch(e){token="";feedback(e.message);}};
 $("sign-out").onclick=()=>{if(saving)return;token="";ownPoems=[];$("login-form").hidden=false;status("本机模式 · 云端权限已锁定");autosaveIfChanged();renderList();};
 $("new-poem").onclick=()=>{if(saving)return;autosaveIfChanged();resetEditor();form.elements.title.focus();};
 $("export-local").onclick=()=>{autosaveIfChanged();download({format:"poetry-device-drafts-v2",drafts},"poetry-device-drafts.json");};
@@ -177,7 +178,7 @@ $("upload-cover").onclick=async()=>{
  autosaveIfChanged();if(current.dirty)return feedback("请先将当前文字保存到云端，再上传配图，避免丢失本机修改。");
  const file=$("cover-upload").files?.[0];if(!file)return feedback("请选择图片。");
  const target={...current};mutationBusy(true);
- try{const result=await api("upload",{poem_id:target.id,version:target.version,mime:"image/jpeg",base64:await compress(file)});current={...target,cover_id:result.cover_id,version:result.version??target.version};drafts=drafts.map(p=>p.localId===target.localId?current:p);persist();ownPoems=ownPoems.map(p=>p.id===target.id?current:p);renderList();await openPoem(current);await refreshGallery();feedback("配图已上传。");}catch(e){feedback(e.message);}finally{mutationBusy(false);}
+ try{const result=await api("upload",{poem_id:target.id,version:target.version,mime:"image/jpeg",base64:await compress(file)});current={...target,cover_id:result.cover_id,version:result.version};drafts=drafts.map(p=>p.localId===target.localId?current:p);persist();ownPoems=ownPoems.map(p=>p.id===target.id?current:p);await openPoem(current);renderList();await refreshGallery();feedback("配图已上传。");}catch(e){feedback(e.message);}finally{mutationBusy(false);}
 };
 resetEditor();$("admin-workspace").hidden=false;$("login-form").hidden=false;
 status("本机模式 · 输入自动保存，云端需要作者权限");renderList();
@@ -199,8 +200,7 @@ window.addEventListener("storage",e=>{
  if(e.key!=="poetry-drafts-v2"||saving)return;
  try{const incoming=JSON.parse(e.newValue||"[]");if(!Array.isArray(incoming))return;
  const other=incoming.find(p=>p.localId===current?.localId);
- if(other&&fields.some(n=>(other[n]||"")!==get(n))){
- if(!editorTouched){drafts=incoming;void openPoem(other);renderList();return;}current={...snapshot(),localId:crypto.randomUUID(),id:null,version:null,status:"draft",dirty:true};feedback("另一页面修改了草稿，当前文字已另存为本机副本，请确认后再上传。");}
+ if(other&&fields.some(n=>(other[n]||"")!==get(n))){if(!editorTouched){drafts=incoming;void openPoem(other);renderList();return;}current={...snapshot(),localId:crypto.randomUUID(),id:null,version:null,status:"draft",dirty:true};feedback("另一页面修改了草稿，当前文字已另存为本机副本，请确认后再上传。");}
  drafts=incoming;if(current&&!drafts.some(p=>p.localId===current.localId))autosave();else{renderList();updateState();}
  }catch{feedback("另一页面的草稿无法读取，当前文字仍保留。");}
 });
@@ -225,3 +225,7 @@ $("import-file").onchange=async()=>{
  if(version!==importRead)return;$("import-text").value=text;$("import-feedback").textContent="文件已读取，请检查后点击导入。";
  }catch(e){if(version===importRead)$("import-feedback").textContent=e.message+" 原作品未改动。请使用 UTF-8 文本，或直接粘贴。";}
 };
+// Authorized operations retain the capability inside cms.js; consumers never receive it.
+window.poetryOwner={api,getPoems:()=>ownPoems.map(p=>({...p})),getCurrent:()=>snapshot(),isUnlocked:()=>Boolean(token),openPoem:async p=>{await openPoem(p);location.hash='admin';}};
+$("sign-out").addEventListener("click",()=>window.dispatchEvent(new Event("poetry-owner-change")));
+document.getElementById('owner-sort')?.addEventListener('change',renderList);

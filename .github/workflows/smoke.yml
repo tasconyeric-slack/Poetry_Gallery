@@ -30,6 +30,10 @@ jobs:
         run: node scripts/worker.test.mjs
       - name: D1 SQLite simulated-owner end-to-end CRUD and private images
         run: node scripts/d1-lifecycle.test.mjs
+      - name: Collections and public share previews
+        run: |
+          node scripts/collections.test.mjs
+          node scripts/share-preview.test.mjs
       - name: Archive retry, cover revision and recovery regressions
         run: node scripts/cloud-regression.test.mjs
       - name: Live deployed Cloudflare Worker HTTP smoke
@@ -47,11 +51,15 @@ jobs:
       - name: Mobile local authoring integration
         run: |
           node scripts/local-test-server.mjs &
+          node -e "(async()=>{for(let i=0;i<30;i++){try{if((await fetch('http://localhost:8080/')).ok)return}catch{}await new Promise(r=>setTimeout(r,300))}process.exit(1)})()"
           node scripts/browser-r2.test.mjs
           node scripts/browser-ui-share.test.mjs
+          node scripts/browser-collections.test.mjs
+          node scripts/visual-states.test.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: local-browser-evidence
           path: |
             .qa/*.png
+            docs/evidence/*.png

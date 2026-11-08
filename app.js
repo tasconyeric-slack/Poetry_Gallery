@@ -59,7 +59,7 @@ function cardFor(poem, index) {
   card.append(top);
   card.append(node("h3", "card-title", poem.title));
   card.append(node("span", "card-author", byline(poem)));
-  card.append(node("div", "card-excerpt", poem.lines.slice(0, 2).join("\n")));
+  card.append(node("div", "card-excerpt", poem.lines.slice(0, 4).join("\n")));
   const foot = node("div", "card-footer");
   foot.append(node("span", "", poem.demo === false ? "原创诗作" : "古典诗词 · 演示"), node("span", "card-arrow", "↗"));
   card.append(foot);
@@ -69,7 +69,7 @@ function cardFor(poem, index) {
 
 function renderGrid() {
   const keyword = search.value.trim().toLocaleLowerCase("zh-CN");
-  const filtered = poems.filter(p => (activeFilter === "全部" || p.genre === activeFilter) &&
+  const filtered = poems.filter(p => (!window.onlyPoetryFavorites || window.poetryFavorites?.has(p.id)) && (activeFilter === "全部" || p.genre === activeFilter) &&
     [p.title, p.author, p.dynasty, p.lines.join("")].join(" ").toLocaleLowerCase("zh-CN").includes(keyword));
   grid.replaceChildren(...filtered.map((poem, index) => cardFor(poem, index)));
   empty.hidden = filtered.length > 0;
@@ -92,13 +92,15 @@ function renderReading(poem) {
   document.title = `${poem.title} · 诗词馆`;
 }
 
+function isPoemRoute(route){return route.startsWith("poem/");}
 let routeVersion = 0;
 async function renderRoute() {
   const version = ++routeVersion;
   let route;
   try { route = decodeURIComponent(location.hash.slice(1)); } catch { route = "poem/invalid"; }
   const admin = document.getElementById("admin-view");
-  const isAdmin = route === "admin";
+  const isAdmin = route === "admin" || route === "library";
+  document.body.dataset.screen=isAdmin?route:isPoemRoute(route)?"reading":"gallery";
   const isPoem = route.startsWith("poem/");
   let poem = isPoem ? (poems.find(p => p.id === route.slice(5)) || demoPoems.find(p => p.id === route.slice(5))) : null;
   let detailError = null;
@@ -113,9 +115,11 @@ async function renderRoute() {
     catch (error) { poem=null;detailError = error; }
     if (version !== routeVersion) return;
   }
+  const custom=route==="collections"||route.startsWith("collection/");
   admin.hidden = !isAdmin;
-  catalog.hidden = isAdmin || isPoem;
+  catalog.hidden = isAdmin || isPoem || custom;
   reading.hidden = !isPoem;
+  window.poetryCollections?.route();
   document.querySelector(".reader-actions").hidden = isPoem && !poem;
   if (poem) {
     activePoem = poem;
@@ -135,6 +139,7 @@ async function renderRoute() {
     document.title = "未找到作品 · 诗词馆";
   } else {
     activePoem = null;
+    window.scrollTo({top:0,behavior:"instant"});
     document.title = isAdmin ? "诗作管理 · 诗词馆" : "诗词馆 · 把岁月写成诗";
   }
 }
@@ -188,12 +193,14 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
     feedback.textContent = "当前浏览器不支持图片导出。";
     return;
   }
-  const paper = "#f7f5ef", ink = "#374239", accent = "#93654e";
+  const theme=document.getElementById("card-theme").value;
+  const paper = theme==="ink"?"#1d1a30":theme==="seal"?"#f2e9d8":"#faf7ed", ink = theme==="ink"?"#eee8d5":"#292735", accent = theme==="seal"?"#a63732":"#b68662";
   ctx.fillStyle = paper;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = "#d9d3c9";
+  ctx.strokeStyle = theme==="ink"?"#665b72":"#d9d3c9";
   ctx.lineWidth = 2;
-  ctx.strokeRect(40, 40, 820, canvas.height - 80);
+  if(theme!=="paper")ctx.strokeRect(40, 40, 820, canvas.height - 80);
+  if(theme==="seal"){ctx.fillStyle=accent;ctx.fillRect(740,86,64,72);ctx.fillStyle=paper;ctx.font="36px serif";ctx.fillText("诗",754,136);}
   ctx.textAlign = "center";
   ctx.fillStyle = accent;
   ctx.font = "24px serif";
@@ -221,6 +228,12 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
   ctx.font = "20px sans-serif";
   ctx.fillText(location.origin + location.pathname, 450, canvas.height - 100, 760);
   ctx.fillText("#poem/" + activePoem.id, 450, canvas.height - 70, 760);
+  if(theme==="seal"&&!square&&contentLines.length<=8&&contentLines.every(l=>Array.from(l).length<=18)){
+    canvas.height=1334;ctx.fillStyle="#fff";ctx.fillRect(0,0,900,1334);ctx.fillStyle="#252525";ctx.font='79px "KaiTi","STKaiti",serif';ctx.textAlign="center";
+    contentLines.forEach((line,col)=>Array.from(line).forEach((ch,row)=>ctx.fillText(ch,770-col*111,174+row*96.2)));
+    ctx.font='52px "KaiTi","STKaiti",serif';const name=Array.from(target.author||"佚名").slice(0,6);name.forEach((ch,row)=>ctx.fillText(ch,85,1190-name.length*59+row*59));
+    ctx.fillStyle="#a01917";ctx.fillRect(53,1203,62,62);ctx.fillStyle="#fff";ctx.font='44px "KaiTi",serif';ctx.fillText("诗",84,1251);
+  }
   try {
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
     if(activePoem!==target)return;
@@ -228,6 +241,7 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
     if (previousShareImageUrl) URL.revokeObjectURL(previousShareImageUrl);
     const imageUrl = URL.createObjectURL(blob);
     previousShareImageUrl = imageUrl;
+    const download=document.getElementById("download-card");download.href=imageUrl;download.download=target.title+".png";
     document.getElementById("share-image-output").src = imageUrl;
     document.getElementById("share-image-preview").hidden = false;
     feedback.textContent = "诗卡已生成。可长按下方图片保存后发送到微信。";
@@ -237,7 +251,7 @@ document.getElementById("export-poem-image").addEventListener("click", async () 
   }
 });
 
-function poemLink(poem){return location.origin+location.pathname+"#poem/"+encodeURIComponent(poem.id);}
+function poemLink(poem){return poem.demo===false?location.origin+"/p/"+encodeURIComponent(poem.id):location.origin+location.pathname+"#poem/"+encodeURIComponent(poem.id);}
 
 function showManualShare(url) {
   const area = document.getElementById("share-manual");
@@ -355,3 +369,5 @@ document.getElementById("make-video").onclick=async()=>{
  try{const {openVideoStudio}=await import("./video-studio.js");await openVideoStudio({...activePoem});}
  catch{feedback.textContent="视频工作室加载失败，请刷新重试。";}
 };
+
+window.poetryExperience={get active(){return activePoem;},get poems(){return poems;},renderGrid};

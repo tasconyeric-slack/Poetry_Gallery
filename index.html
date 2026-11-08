@@ -8,7 +8,11 @@
   <title>诗词馆 · 把岁月写成诗</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./cms.css" />
+  <link rel="stylesheet" href="./rebuild.css" />
+  <link rel="stylesheet" href="./collections.css" />
   <script defer src="./app.js"></script>
+  <script defer src="./experience.js"></script>
+  <script type="module" src="./collections.js"></script>
   <script type="module" src="./cms.js"></script>
 </head>
 <body>
@@ -17,10 +21,10 @@
     <div class="header-inner">
       <a class="brand" href="#home" aria-label="诗词馆首页"><span class="brand-seal" aria-hidden="true">诗</span><span>诗词馆</span></a>
       <nav aria-label="主导航" class="nav-links">
-        <a href="#home">首页</a>
-        <a href="#gallery">诗作</a>
+        <a href="#gallery">发现</a>
+        <a href="#collections">诗集</a>
         <a href="#admin">写一首诗</a>
-        <a href="#about">关于</a>
+        <a href="#library">我的</a>
       </nav>
     </div>
   </header>
@@ -49,13 +53,14 @@
 
       <section class="archive section-shell" id="gallery" aria-labelledby="archive-title">
         <div class="section-heading">
-          <div><p class="eyebrow dark-eyebrow">01 / THE COLLECTION</p><h2 id="archive-title">诗作选集<span class="heading-dot">.</span></h2></div>
-          <p class="heading-aside">在字里行间，重逢某个时刻。</p>
+          <div><p class="eyebrow dark-eyebrow">EXPLORE</p><h2 id="archive-title">发现</h2></div>
+          <p class="heading-aside">每一首诗，都是一次相逢。</p>
         </div>
 
         <div id="demo-notice" hidden class="demo-notice" role="note"><span class="notice-symbol">※</span> 当前展示的是<strong>古典诗词示例</strong>，用于预览阅读、分享与打印，不属于家庭原创作品。</div>
 
         <p id="collection-status" class="collection-status" role="status" aria-live="polite" hidden></p>
+        <div class="explore-tabs"><button class="selected" id="explore-all">全部诗作</button><button id="explore-favorites">我的收藏</button></div>
         <div class="archive-tools">
           <div class="filters" role="group" aria-label="按体裁筛选">
             <button class="filter active" type="button" data-filter="全部" aria-pressed="true">全部</button>
@@ -81,6 +86,7 @@
 
     <section id="reading-view" class="reader-view section-shell" aria-labelledby="reader-title" hidden>
       <button id="back-to-gallery" class="back-link" type="button"><span aria-hidden="true">←</span> 返回诗作</button>
+      <div class="reading-toolbar"><button id="previous-poem" aria-label="上一首">←</button><button id="reader-settings">Aa · 排版</button><button id="favorite-poem" aria-pressed="false">♡ 收藏</button><button id="next-poem" aria-label="下一首">→</button></div><div id="type-settings" hidden><label>字号 <input id="reader-size" type="range" min="16" max="32" value="22"></label><label>主题 <select id="reader-theme"><option value="paper">暖纸</option><option value="white">素白</option><option value="night">夜读</option></select></label></div>
       <div class="reader-paper">
         <p class="reader-kicker" id="reader-genre"></p>
         <h1 id="reader-title"></h1>
@@ -91,6 +97,7 @@
         <p class="reader-note" id="reader-note"></p>
         <div class="reader-actions">
           <button type="button" id="share-poem">分享这首诗 ↗</button>
+          <label>诗卡主题<select id="card-theme"><option value="paper">素笺</option><option value="ink">墨夜</option><option value="seal">朱印</option></select></label>
           <label>诗卡格式<select id="card-format"><option value="vertical">竖版</option><option value="square">方形</option></select></label>
           <button type="button" id="copy-poem-link">复制链接</button>
           <button type="button" hidden id="make-video">制作视频</button>
@@ -100,7 +107,7 @@
         <p class="reader-feedback" id="reader-feedback" role="status" aria-live="polite"></p>
         <div id="share-image-preview" class="share-image-preview" hidden>
           <p>长按图片保存，随后可发送到微信。图片不会上传至服务器。</p>
-          <img id="share-image-output" alt="当前诗作生成的图片诗卡" />
+          <a id="download-card" class="card-download" download>下载 PNG 诗卡 ↓</a><img id="share-image-output" alt="当前诗作生成的图片诗卡" />
         </div>
         <div id="share-manual" class="share-manual" hidden>
           <label for="share-manual-url">如微信无法直接分享，请长按或选中并复制链接：</label>
@@ -136,7 +143,7 @@
         </div>
         <div class="admin-layout">
           <div class="admin-panel">
-            <h2>我的作品</h2>
+            <h2>我的作品</h2><div class="library-tabs"><button type="button" data-owner-status="all" class="selected">全部</button><button type="button" data-owner-status="draft">私存</button><button type="button" data-owner-status="published">已发布</button></div><label>排序<select id="owner-sort"><option value="new">最近修改</option><option value="title">标题</option></select></label>
             <label>检索标题、正文、作者<input id="owner-search" type="search" /></label>
             <label>体裁<select id="owner-genre"><option value="">全部</option><option>五言</option><option>七言</option><option>词</option><option>其他</option></select></label>
             <label>创作年份<input id="owner-year" type="search" placeholder="例如 2026" /></label>
@@ -144,7 +151,7 @@
             <div id="admin-list" class="admin-list"></div>
           </div>
           <form id="poem-form" class="admin-panel admin-editor">
-            <h2 id="editor-heading">新建诗作</h2>
+            <button type="button" id="focus-writer">专注写作 ⤢</button><h2 id="editor-heading">新建诗作</h2>
             <p id="editor-state" class="admin-hint" role="status" aria-live="polite"></p>
             <label>标题<input name="title" maxlength="120" required placeholder="输入诗名" /></label>
             <label>作者<input name="author" maxlength="120" placeholder="署名" /></label>
@@ -189,5 +196,6 @@
   </main>
 
   <footer class="site-footer"><div class="footer-inner"><span class="footer-brand">诗词馆 <i>·</i> 岁月有诗</span><span>一字一句，皆有来处。 <span class="footer-year">© <span id="year"></span></span></span></div></footer>
+<nav class="bottom-nav" aria-label="底部导航"><a href="#gallery"><span>▦</span>发现</a><a href="#collections"><span>▤</span>诗集</a><a class="write-tab" href="#admin"><span>✎</span>写诗</a><a href="#library"><span>♙</span>我的</a></nav>
 </body>
 </html>

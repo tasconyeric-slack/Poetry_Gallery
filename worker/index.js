@@ -44,7 +44,7 @@ async function handler(request,env) {
   if(!env.DB) return error("Database unavailable",503);
   const url=new URL(request.url);
   const op=url.searchParams.get("op")||"list";
-  const publicRead=request.method==="GET"&&["list","detail","cover","health"].includes(op);
+  const publicRead=request.method==="GET"&&["list","detail","cover","health","collections","collection-detail"].includes(op);
   if(!publicRead){
     const origin=request.headers.get("origin");
     if(origin&&!allowedOrigins(env).includes(origin))return error("Origin rejected",403);
@@ -52,6 +52,24 @@ async function handler(request,env) {
     if(!await isOwner(request,env))return error("Forbidden",403);
   }
   if(request.method==="GET") {
+    if(op==="collections"||op==="owner-collections") {
+      const owner=op==="owner-collections";
+      const {results}=await env.DB.prepare(owner
+        ? "SELECT c.*,COUNT(i.poem_id) AS poem_count FROM collections c LEFT JOIN collection_items i ON i.collection_id=c.id GROUP BY c.id ORDER BY c.updated_at DESC"
+        : "SELECT c.id,c.title,c.intro,c.cover,c.updated_at,COUNT(p.id) AS poem_count FROM collections c LEFT JOIN collection_items i ON i.collection_id=c.id LEFT JOIN poems p ON p.id=i.poem_id AND p.status='published' WHERE c.status='published' GROUP BY c.id ORDER BY c.updated_at DESC").all();
+      return json({collections:results});
+    }
+    if(op==="collection-detail") {
+      const id=url.searchParams.get("id")||"";
+      if(!uuid.test(id))return error("Not found",404);
+      const owner=await isOwner(request,env);
+      const collection=await env.DB.prepare(owner?"SELECT * FROM collections WHERE id=?":"SELECT id,title,intro,cover,updated_at FROM collections WHERE id=? AND status='published'").bind(id).first();
+      if(!collection)return error("Not found",404);
+      const {results:poems}=await env.DB.prepare(owner
+        ? "SELECT p.*,i.position FROM collection_items i JOIN poems p ON p.id=i.poem_id WHERE i.collection_id=? ORDER BY i.position"
+        : "SELECT p.id,p.title,p.author,p.body,p.genre,p.note,p.composed_on,p.published_at,p.cover_id,i.position FROM collection_items i JOIN poems p ON p.id=i.poem_id WHERE i.collection_id=? AND p.status='published' ORDER BY i.position").bind(id).all();
+      return json({collection,poems});
+    }
     if(op==="health") {
       try{await env.DB.prepare("SELECT version FROM poems LIMIT 1").all();await env.DB.prepare("SELECT version FROM poem_revisions LIMIT 1").all();}
       catch{return json({ok:false,backend:"d1",schema:"migration-required",auth:ownerConfigured(env)?"owner-token":"pending"},503);}
@@ -79,12 +97,18 @@ async function handler(request,env) {
     }
     if(op==="backup"){
       if(!await isOwner(request,env))return error("Unauthorized",401);
-      const [{results:poems},{results:covers},{results:revisions}]=await env.DB.batch([
+      const hasCollections=await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='collections'").first();
+      const queries=[
         env.DB.prepare("SELECT * FROM poems ORDER BY created_at ASC"),
         env.DB.prepare("SELECT id,poem_id,media_type,base64,created_at FROM covers ORDER BY created_at ASC"),
         env.DB.prepare("SELECT * FROM poem_revisions ORDER BY poem_id,version")
-      ]);
-      return json({format:"poetry-gallery-backup-v2",completeness:"all poems, revisions and inline covers",exported_at:new Date().toISOString(),poems,covers,revisions});
+      ];
+      // Older databases can still export their complete pre-collection archive.
+      // The additive fields are emitted together only when migration 0004 exists.
+      if(hasCollections)queries.push(env.DB.prepare("SELECT * FROM collections ORDER BY created_at,id"),env.DB.prepare("SELECT * FROM collection_items ORDER BY collection_id,position"));
+      const [{results:poems},{results:covers},{results:revisions},collectionRows,itemRows]=await env.DB.batch(queries);
+      const extra=hasCollections?{collections:collectionRows.results,collection_items:itemRows.results}:{};
+      return json({format:"poetry-gallery-backup-v2",completeness:"all poems, revisions and inline covers"+(hasCollections?", collections and ordered membership":""),exported_at:new Date().toISOString(),poems,covers,revisions,...extra});
     }
     if(op==="cover") {
       const id=url.searchParams.get("id")||"";
@@ -106,6 +130,37 @@ async function handler(request,env) {
   try{body=await parseBody(request);}catch{return error("Invalid JSON",400);}
   if(op==="logout")return json({owner:false}); // Browser discards its in-memory capability.
   if(!await isOwner(request,env))return error("Unauthorized",401);
+  if(op==="collection-save") {
+    const id=body.id||body.localId||crypto.randomUUID();
+    const title=typeof body.title==='string'?body.title.trim():'';
+    const intro=typeof body.intro==='string'?body.intro:'';
+    const cover=typeof body.cover==='string'?body.cover:'';
+    const status=body.status||'draft',ids=body.poem_ids;
+    if(!uuid.test(id)||!title||title.length>120||intro.length>5000||cover.length>2000||
+      (cover&&!/^https:\/\//.test(cover))||!['draft','published'].includes(status)||
+      !Array.isArray(ids)||ids.length>500||ids.some(x=>typeof x!=='string'||!uuid.test(x))||new Set(ids).size!==ids.length)
+      return error("诗集字段或诗作顺序无效");
+    if(body.id&&(!Number.isInteger(body.version)||body.version<1))return error("更新诗集需要当前版本");
+    // Validate every member before touching collection metadata. The foreign keys
+    // and D1 batch transaction also reject a concurrent poem deletion atomically.
+    for(const poemId of ids)if(!await env.DB.prepare("SELECT id FROM poems WHERE id=?").bind(poemId).first())return error("诗作不存在",400);
+    const stamp=crypto.randomUUID(),date=new Date().toISOString();
+    const commands=[body.id
+      ? env.DB.prepare("UPDATE collections SET title=?,intro=?,cover=?,status=?,updated_at=?,mutation_id=?,version=version+1 WHERE id=? AND version=?").bind(title,intro,cover,status,date,stamp,id,body.version)
+      : env.DB.prepare("INSERT INTO collections(id,title,intro,cover,status,version,mutation_id,created_at,updated_at) VALUES(?,?,?,?,?,1,?,?,?) ON CONFLICT(id) DO NOTHING").bind(id,title,intro,cover,status,stamp,date,date),
+      env.DB.prepare("DELETE FROM collection_items WHERE collection_id=? AND EXISTS(SELECT 1 FROM collections WHERE id=? AND mutation_id=?)").bind(id,id,stamp),
+      ...ids.map((poemId,position)=>env.DB.prepare("INSERT INTO collection_items(collection_id,poem_id,position) SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM collections WHERE id=? AND mutation_id=?)").bind(id,poemId,position,id,stamp))
+    ];
+    const results=await env.DB.batch(commands);
+    if(!results[0].meta.changes)return error("诗集版本冲突，请重新读取；本机修改仍保留。",409);
+    return json({id,version:body.id?body.version+1:1});
+  }
+  if(op==="collection-delete") {
+    if(!uuid.test(body.id||'')||body.confirm!==true||!Number.isInteger(body.version)||body.version<1)return error("删除诗集需要确认及当前版本");
+    const result=await env.DB.prepare("DELETE FROM collections WHERE id=? AND version=?").bind(body.id,body.version).run();
+    if(!result.meta.changes)return error("诗集已变更或不存在",409);
+    return json({deleted:true}); // Only membership cascades; poems remain untouched.
+  }
   if(op==="save"||op==="restore") {
     let old=null,restoredCover;
     if(body.id){
@@ -180,7 +235,7 @@ function allowedOrigins(env){
 export default {
   async fetch(request,env) {
     const op=new URL(request.url).searchParams.get("op")||"list";
-    const publicRead=["health","list","detail","cover"].includes(op)&&!request.headers.has("authorization");
+    const publicRead=["health","list","detail","cover","collections","collection-detail"].includes(op)&&!request.headers.has("authorization");
     const origin=request.headers.get("origin");
     const permitted=origin&&allowedOrigins(env).includes(origin);
     if(request.method==="OPTIONS"){
