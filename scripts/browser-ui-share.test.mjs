@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {mkdirSync} from 'node:fs';
 mkdirSync('.qa',{recursive:true});
 const sampleTitle='合成验收诗 '+crypto.randomUUID().slice(0,8),longTitle='长诗合成测试 '+crypto.randomUUID().slice(0,8);
-const base='http://localhost:8080',api=base+'/api',headers={authorization:'Bearer '+'a'.repeat(64)};
+const base=process.env.POETRY_TEST_URL||'http://localhost:8080',api=base+'/api',headers={authorization:'Bearer '+'a'.repeat(64)};
+assert.ok(['localhost','127.0.0.1'].includes(new URL(base).hostname),'Synthetic write test requires loopback');
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||(process.platform==='win32'?'C:/Users/Li Yuze/AppData/Local/ms-playwright/chromium-1254/chrome-win64/chrome.exe':undefined)});
 try{
  const context=await browser.newContext({viewport:{width:375,height:812}});
@@ -11,11 +12,11 @@ try{
  await context.route('https://poetry-gallery-api.tasconyeric.workers.dev/**',async route=>{
   const req=route.request(),query=new URL(req.url()).search,op=new URL(req.url()).searchParams.get('op');
   if(op==='save'&&hold){pending=true;await hold;}
-  if((op==='upload'&&failUpload)||(op==='save'&&failSave))return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'本地测试：网络暂不可用'})});
-  const r=await fetch(api+query,{method:req.method(),headers:{...req.headers(),origin:base},body:req.postData()||undefined});
-  await route.fulfill({status:r.status,headers:Object.fromEntries(r.headers),body:Buffer.from(await r.arrayBuffer())});
+  if((op==='upload'&&failUpload)||(op==='save'&&failSave))return route.fulfill({status:503,contentType:'application/json',headers:{'access-control-allow-origin':base},body:JSON.stringify({error:'本地测试：网络暂不可用'})});
+  const r=await fetch(api+query,{method:req.method(),headers:{...req.headers(),origin:'http://localhost:8080'},body:req.postData()||undefined});
+  await route.fulfill({status:r.status,headers:{...Object.fromEntries(r.headers),'access-control-allow-origin':base},body:Buffer.from(await r.arrayBuffer())});
  });
- const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(12000);
  const field=n=>page.locator('[name='+n+']');
  const waitSaved=()=>page.waitForFunction(()=>document.querySelector('#editor-state').textContent.includes('云端保存成功'));
  await page.goto(base+'/#admin');
@@ -50,6 +51,8 @@ try{
  await reader.reload();await reader.waitForFunction(()=>document.querySelector('#reader-title').textContent==='作品不存在或尚未发布');assert.equal(await reader.locator('#reader-poem').innerText(),'');
  // Failed sync keeps the edit; offline does not claim a cloud save.
  await field('body').fill(body+'\n网络失败时保留');failSave=true;await page.locator('#save-cloud').click();await page.waitForFunction(()=>document.querySelector('#editor-state').textContent.includes('需要重试'));failSave=false;
+ await page.locator('#save-cloud').click();await waitSaved();
+ await field('body').fill(body+'\n云端重读时保留本机修改');await page.goto(base+'/#library');page.once('dialog',d=>d.accept());await page.locator('#reload-cloud').click();await page.waitForFunction(()=>document.querySelector('#admin-list').textContent.includes('（本机保留）'));assert.ok(await page.evaluate(()=>localStorage.getItem('poetry-drafts-v2').includes('云端重读时保留本机修改')));await page.goto(base+'/#admin');
  await context.setOffline(true);await page.waitForFunction(()=>document.querySelector('#editor-state').textContent.includes('当前离线'));await field('note').fill('离线附记');await context.setOffline(false);
  // Import never replaces the current work, including bad files.
  await page.locator('#import-poem').click();await page.locator('#import-file').setInputFiles({name:'bad.txt',mimeType:'text/plain',buffer:Buffer.from([255,254,0])});await page.waitForFunction(()=>document.querySelector('#import-feedback').textContent.includes('原作品未改动'));
@@ -61,6 +64,11 @@ try{
  // A long poem renders fully in the reader and explicitly refuses a clipped card.
  await field('title').fill(longTitle);await field('body').fill(Array.from({length:60},(_,i)=>'第'+i+'行合成文字，').join('\n'));await page.locator('button[data-save-status=published]').click();await waitSaved();
  records=await (await fetch(api+'?op=owner-list',{headers})).json();const longId=records.poems.find(p=>p.title===longTitle).id;await reader.goto(base+'/#poem/'+longId);await reader.waitForFunction(t=>document.querySelector('#reader-title').textContent===t,longTitle);await reader.locator('#export-poem-image').click();assert.match(await reader.locator('#reader-feedback').innerText(),/篇幅较长.*链接.*PDF/);assert.equal((await reader.locator('#reader-poem').innerText()).split('\n').length,60);
+ // A storage failure is explicit and export still contains the in-memory draft.
+ await page.evaluate(()=>{window.storageSet=Storage.prototype.setItem;Storage.prototype.setItem=()=>{throw new DOMException('full','QuotaExceededError');};});
+ await field('note').fill('存储空间不足时的合成附记');assert.match(await page.locator('#editor-state').innerText(),/本机保存失败/);
+ const download=page.waitForEvent('download');await page.locator('#export-local').click();const exported=await download;assert.equal(exported.suggestedFilename(),'poetry-device-drafts.json');
+ await page.evaluate(()=>Storage.prototype.setItem=window.storageSet);
  assert.ok(!await page.evaluate(()=>JSON.stringify(localStorage).includes('a'.repeat(64))));assert.deepEqual(errors,[]);
  console.log('PASS: 375px authoring/reload/switch/save lock/image failure+private cover/publish/cold link+refresh/PNG vertical+square/clipboard+manual+cancel/withdraw/offline+retry/TXT+MD+paste/long poem; synthetic local data only.');
 }finally{await browser.close();}

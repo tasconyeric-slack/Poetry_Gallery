@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id),form=$("poem-form");
 const PUBLIC_API="https://poetry-gallery-api.tasconyeric.workers.dev";
 const fields=["title","author","body","genre","note","composed_on"];
 let token="",ownPoems=[],current=null,saving=false,coverURL=null,saveError=false,localError=false;
-let editorVersion=0;
+let editorVersion=0,editorTouched=false;
 const removedLocalIds=new Set();
 const feedback=msg=>{$("admin-feedback").textContent=msg;};
 const status=msg=>{$("admin-status").textContent=msg;};
@@ -39,6 +39,7 @@ function updateState(){
 window.addEventListener("offline",updateState);window.addEventListener("online",updateState);
 function autosave(){
  if(!current||saving)return;
+ editorTouched=true;
  current={...snapshot(),dirty:true,local_updated_at:new Date().toISOString()};
  drafts=drafts.filter(p=>p.localId!==current.localId);drafts.unshift(current);
  persist();updateState();
@@ -46,7 +47,7 @@ function autosave(){
 }
 function preview(){ $("poem-preview").textContent=[get("title"),get("author"),get("body"),get("note")].join("\n\n"); }
 function resetEditor(){
- editorVersion++;saveError=false;
+ editorVersion++;editorTouched=false;saveError=false;
  if(coverURL){URL.revokeObjectURL(coverURL);coverURL=null;}
  current={localId:crypto.randomUUID(),id:null,version:null,status:"draft"};form.reset();
  fields.forEach(n=>current[n]=get(n));
@@ -72,7 +73,7 @@ function renderList(){
 }
 async function loadPoems(){ownPoems=(await api("owner-list")).poems||[];renderList();}
 async function openPoem(p){
- autosaveIfChanged();const opened=++editorVersion;saveError=false;current={...p,localId:p.localId||crypto.randomUUID()};
+ autosaveIfChanged();const opened=++editorVersion;editorTouched=false;saveError=false;current={...p,localId:p.localId||crypto.randomUUID()};
  fields.forEach(n=>put(n,p[n]));$("editor-heading").textContent="编辑作品";
  $("editor-state").textContent=p.dirty||!p.id?"本机草稿 · 尚未同步":p.status==="published"?"云端已保存 · 已发布":"云端已保存 · 私有草稿";
  $("delete-poem").hidden=false;$("admin-cover-preview").hidden=true;$("cover-upload").value="";preview();updateState();$("revision-list").replaceChildren();
@@ -83,13 +84,13 @@ async function openPoem(p){
   for(const r of revisions){
    const detail=document.createElement("details"),label=document.createElement("summary"),pre=document.createElement("pre"),button=document.createElement("button");
    label.textContent="版本 "+r.version+" · "+r.saved_at;pre.textContent=[r.title,r.author,r.body,r.note].join("\n\n");button.type="button";button.textContent="恢复为新版本";
-   button.onclick=async()=>{if(saving||!confirm("恢复此版本？当前内容会保留在修订历史。本机修改请先保存或导出。"))return;await save("restore",{revision:r.version});};
+   button.onclick=async()=>{if(current?.dirty){feedback("请先保存当前修改到云端，再恢复历史版本；本机草稿已保留。");return;}if(saving||!confirm("恢复此版本？当前内容会保留在修订历史。本机修改请先保存或导出。"))return;await save("restore",{revision:r.version});};
    detail.append(label,pre,button);$("revision-list").append(detail);
   }
  }catch(e){feedback("历史读取失败："+e.message);}
 }
 function autosaveIfChanged(){if(current&&fields.some(n=>get(n)!==(current[n]||"")))autosave();}
-form.addEventListener("input",event=>{if(fields.includes(event.target.name))autosave();}); // immediate writes also survive fast reloads and mobile backgrounding
+form.addEventListener("input",event=>{if(fields.includes(event.target.name))autosaveIfChanged();}); // immediate writes also survive fast reloads and mobile backgrounding
 async function save(op="save",extra={}){
  if(saving)return;
  autosaveIfChanged();
@@ -199,7 +200,7 @@ window.addEventListener("storage",e=>{
  if(e.key!=="poetry-drafts-v2"||saving)return;
  try{const incoming=JSON.parse(e.newValue||"[]");if(!Array.isArray(incoming))return;
  const other=incoming.find(p=>p.localId===current?.localId);
- if(other&&fields.some(n=>(other[n]||"")!==get(n))){current={...snapshot(),localId:crypto.randomUUID(),id:null,version:null,status:"draft",dirty:true};feedback("另一页面修改了草稿，当前文字已另存为本机副本，请确认后再上传。");}
+ if(other&&fields.some(n=>(other[n]||"")!==get(n))){if(!editorTouched){drafts=incoming;void openPoem(other);renderList();return;}current={...snapshot(),localId:crypto.randomUUID(),id:null,version:null,status:"draft",dirty:true};feedback("另一页面修改了草稿，当前文字已另存为本机副本，请确认后再上传。");}
  drafts=incoming;if(current&&!drafts.some(p=>p.localId===current.localId))autosave();else{renderList();updateState();}
  }catch{feedback("另一页面的草稿无法读取，当前文字仍保留。");}
 });

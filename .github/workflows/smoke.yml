@@ -52,6 +52,7 @@ jobs:
         run: |
           node scripts/local-test-server.mjs &
           node -e "(async()=>{for(let i=0;i<30;i++){try{if((await fetch('http://localhost:8080/')).ok)return}catch{}await new Promise(r=>setTimeout(r,300))}process.exit(1)})()"
+          node scripts/browser-r2.test.mjs
           node scripts/browser-ui-share.test.mjs
           node scripts/browser-collections.test.mjs
           node scripts/visual-states.test.mjs

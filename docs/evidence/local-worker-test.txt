@@ -14,3 +14,4 @@ Regression command (PowerShell): $env:POETRY_LOCAL_WORKER_URL='http://127.0.0.1:
 Captured final output:
 Cloud regression PASS: retry, cover versions/restore, publication, authorization, backup recovery, confirmed conditional deletion (workerd/D1)
 Exit code: 0
+Post-main merge validation: merged main health/preflight regression checks; reran cloud-regression against real workerd/D1 at127.0.0.1:8788 successfully. Worker, D1 lifecycle, collections, share preview and SQLite cloud regression also passed.

@@ -15,3 +15,4 @@ PASS actual local Wrangler4.158.0 workerd/D1 cloud-regression; see local-worker-
 PASS node --check app.js,cms.js,collections.js,experience.js,worker/index.js,api/share.js
 PASS git diff --check
 Production deployment / WeChat physical-device acceptance not performed.
+Post latest-main merge: PASS browser-r2.test.mjs and browser-ui-share.test.mjs on isolated loopback8091 with updated actual Worker/SQLite; inherited cloud reread/retry/quota protections retained. PASS collections browser and visual-states rerun; PASS backend suites and actual workerd/D1 including inherited health/preflight checks.

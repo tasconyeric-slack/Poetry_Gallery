@@ -12,6 +12,12 @@ const {default:worker}=await import('data:text/javascript;base64,'+Buffer.from(r
 const token='a'.repeat(64),env={DB,POETRY_OWNER_TOKEN:token};
 async function send(op,body,owner=true){const init={method:body?'POST':'GET',headers:{origin:'http://localhost:8080',...(owner?{authorization:'Bearer '+token}:{}),...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined};return remote?fetch(remote+'/?op='+op,init):worker.fetch(new Request('http://localhost:8787/?op='+op,init),env);}
 const input={localId:crypto.randomUUID(),title:'本地回归',author:'合成测试',body:'\n第一行\n\n第二段\n',genre:'五言',status:'draft'};
+let health=await send('health',undefined,false);assert.equal(health.status,200);assert.equal((await health.json()).schema,'revisions-v3');
+for(const [origin,status] of [['http://localhost:8080',204],['https://hostile.invalid',403]]){
+ const init={method:'OPTIONS',headers:{origin,'access-control-request-method':'POST','access-control-request-headers':'authorization, content-type'}};
+ const preflight=remote?await fetch(remote+'/?op=save',init):await worker.fetch(new Request('http://localhost:8787/?op=save',init),env);
+ assert.equal(preflight.status,status);
+}
 let r=await send('session');assert.equal(r.status,200);
 r=await send('save',input);assert.equal(r.status,200);let saved=await r.json();
 // Lost response after committed create: the same device draft must resolve to one ID.

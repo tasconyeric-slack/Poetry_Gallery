@@ -50,8 +50,8 @@
       677
     ],
     "threshold": 20,
-    "mismatched_pixel_ratio": 0.21715,
-    "mean_absolute_rgb_delta": 16.78,
+    "mismatched_pixel_ratio": 0.21607,
+    "mean_absolute_rgb_delta": 16.698,
     "scope": "Localized/adaptive structural comparison; different text, chrome and states, NOT equality score"
   },
   {
