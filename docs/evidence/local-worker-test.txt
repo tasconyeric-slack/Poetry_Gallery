@@ -1,0 +1,16 @@
+Local Worker / D1 evidence — 2026-11-08
+Runtime: cached Wrangler 4.158.0, actual workerd with local D1 (not the SQLite adapter).
+Config: ignored .qa/local-worker/wrangler.toml; main ../../worker/index.js.
+Safety: database_id all-zero local test identity; --local; loopback127.0.0.1:8788.
+Auth: deterministic synthetic fixture only; production .dev.vars was not opened or used.
+Persistence: ignored .qa/local-worker/state.
+Migration command: wrangler d1 migrations apply poetry-gallery-d1 --local --config .qa/local-worker/wrangler.toml --persist-to .qa/local-worker/state
+Result: 0001_poems.sql,0002_author.sql,0003_revisions.sql,0004_collections.sql all applied successfully locally.
+Serve command: wrangler dev --local --port 8788 --ip 127.0.0.1 --config .qa/local-worker/wrangler.toml --persist-to .qa/local-worker/state
+Server result: Ready on http://127.0.0.1:8788
+Sandbox note: initial esbuild directory read was denied; the same local-only command succeeded after automatic approval escalation. No production network operation.
+Regression repair: remote backup correctly includes collection arrays; upgraded regression recovery fixture through0004 before restoring that schema. Initial failed local test wrote synthetic data only to the disposable local database.
+Regression command (PowerShell): $env:POETRY_LOCAL_WORKER_URL='http://127.0.0.1:8788'; node scripts/cloud-regression.test.mjs
+Captured final output:
+Cloud regression PASS: retry, cover versions/restore, publication, authorization, backup recovery, confirmed conditional deletion (workerd/D1)
+Exit code: 0

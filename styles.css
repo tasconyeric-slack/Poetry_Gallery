@@ -152,3 +152,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
  .anthology-body{overflow-wrap:anywhere;white-space:pre-wrap!important;orphans:3;widows:3}
  #anthology-print h2{break-after:avoid}
 }
+
+.reader-poem{user-select:text;-webkit-user-select:text}.reader-actions label{font-size:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.share-manual input{font-size:16px}.reader-feedback{font-size:16px;line-height:1.8}.share-image-preview img{-webkit-touch-callout:default}
+.reader-paper,.reader-author,.reader-feedback{overflow-wrap:anywhere;min-width:0}
+@media(max-width:650px){.header-inner{flex-wrap:wrap;gap:10px;padding-top:12px;padding-bottom:12px}.nav-links{gap:14px}.reader-author{font-size:16px}.reader-actions label{width:100%;justify-content:center}}

@@ -1,0 +1,17 @@
+Verification captured 2026-11-08, synthetic local data only.
+PASS smoke.mjs
+PASS mvp-check.mjs
+PASS config.test.mjs
+PASS worker.test.mjs
+PASS d1-lifecycle.test.mjs
+PASS import-poems.test.mjs
+PASS cloud-regression.test.mjs (SQLite)
+PASS collections.test.mjs (SQLite, backup/restore compatibility)
+PASS share-preview.test.mjs (public metadata, withdrawal, escaping, trusted image)
+PASS browser-ui-share.test.mjs (375px full authoring journey, failures, offline, import, long poem)
+PASS browser-collections.test.mjs (multiple membership/order, privacy/public cold link, safe delete, real32988-byte PDF)
+PASS visual-states.test.mjs (5 routes x3 viewports, typography/favorites persistence,3 PNG downloads, no overflow/page errors)
+PASS actual local Wrangler4.158.0 workerd/D1 cloud-regression; see local-worker-test.txt
+PASS node --check app.js,cms.js,collections.js,experience.js,worker/index.js,api/share.js
+PASS git diff --check
+Production deployment / WeChat physical-device acceptance not performed.

@@ -1,0 +1,68 @@
+[
+  {
+    "screen": "gallery",
+    "size": [
+      390,
+      514
+    ],
+    "threshold": 20,
+    "mismatched_pixel_ratio": 0.11658,
+    "mean_absolute_rgb_delta": 16.255,
+    "scope": "Localized/adaptive structural comparison; different text, chrome and states, NOT equality score"
+  },
+  {
+    "screen": "reader",
+    "size": [
+      390,
+      844
+    ],
+    "threshold": 20,
+    "mismatched_pixel_ratio": 0.10285,
+    "mean_absolute_rgb_delta": 15.755,
+    "scope": "Localized/adaptive structural comparison; different text, chrome and states, NOT equality score"
+  },
+  {
+    "screen": "writer",
+    "size": [
+      390,
+      786
+    ],
+    "threshold": 20,
+    "mismatched_pixel_ratio": 0.02668,
+    "mean_absolute_rgb_delta": 2.082,
+    "scope": "Localized/adaptive structural comparison; different text, chrome and states, NOT equality score"
+  },
+  {
+    "screen": "library",
+    "size": [
+      390,
+      790
+    ],
+    "threshold": 20,
+    "mismatched_pixel_ratio": 0.12337,
+    "mean_absolute_rgb_delta": 13.203,
+    "scope": "Localized/adaptive structural comparison; different text, chrome and states, NOT equality score"
+  },
+  {
+    "screen": "collections",
+    "size": [
+      390,
+      677
+    ],
+    "threshold": 20,
+    "mismatched_pixel_ratio": 0.21715,
+    "mean_absolute_rgb_delta": 16.78,
+    "scope": "Localized/adaptive structural comparison; different text, chrome and states, NOT equality score"
+  },
+  {
+    "screen": "card",
+    "size": [
+      552,
+      818
+    ],
+    "threshold": 20,
+    "mismatched_pixel_ratio": 0.03424,
+    "mean_absolute_rgb_delta": 3.823,
+    "scope": "Matched public-domain text; native fonts differ"
+  }
+]

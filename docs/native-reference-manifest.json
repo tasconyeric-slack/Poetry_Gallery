@@ -1,0 +1,198 @@
+{
+  "acquiredOn": "2026-11-08",
+  "kind": "official-app-store-developer-promotional-screenshots",
+  "entries": [
+    {
+      "product": "popoem",
+      "version": "6.1",
+      "file": ".reference/popoem-1.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f7/35/29/f73529c1-fbbd-4717-5c64-70ac392378e0/1.jpg/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f7/35/29/f73529c1-fbbd-4717-5c64-70ac392378e0/1.jpg/1170x2532bb.jpg",
+      "sha256": "f3983d35396d928601f6995b334a756c29e0115599706235d9fe2423cb8b7e70"
+    },
+    {
+      "product": "popoem",
+      "version": "6.1",
+      "file": ".reference/popoem-2.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/09/f9/fb/09f9fbd5-f41b-8be1-c8e2-55309c93d1ca/2.jpg/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/09/f9/fb/09f9fbd5-f41b-8be1-c8e2-55309c93d1ca/2.jpg/1170x2532bb.jpg",
+      "sha256": "7b3dbfb2d3f080e58ac76ddecd8781c1e95efcd0b17e6660389c2411cfb65b89"
+    },
+    {
+      "product": "popoem",
+      "version": "6.1",
+      "file": ".reference/popoem-3.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/98/73/e1/9873e165-c839-9834-e136-127315cedb72/3.jpg/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/98/73/e1/9873e165-c839-9834-e136-127315cedb72/3.jpg/1170x2532bb.jpg",
+      "sha256": "7f5beb29525cbdf158283aca7662cec99dcb94b9869ee95c6a5d5cb69c6dff60"
+    },
+    {
+      "product": "popoem",
+      "version": "6.1",
+      "file": ".reference/popoem-4.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/83/b8/0d/83b80d17-a919-4de1-3760-29ae97e8a0b8/5.jpg/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/83/b8/0d/83b80d17-a919-4de1-3760-29ae97e8a0b8/5.jpg/1170x2532bb.jpg",
+      "sha256": "f8e636e85551f13da65400c61f48c27a4c6b26f3ebbf9252719274a31e0a30fc"
+    },
+    {
+      "product": "popoem",
+      "version": "6.1",
+      "file": ".reference/popoem-5.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9d/93/cd/9d93cd07-fdb1-3c43-5a23-2c4055e6c234/4.jpg/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9d/93/cd/9d93cd07-fdb1-3c43-5a23-2c4055e6c234/4.jpg/1170x2532bb.jpg",
+      "sha256": "0d5fbdfede36168ed16d4b7c97b2102a1601dcba0a154c03408462210514ae2a"
+    },
+    {
+      "product": "popoem",
+      "version": "6.1",
+      "file": ".reference/popoem-6.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/6a/2c/56/6a2c5653-d905-bb93-6229-604b144c9687/7.jpg/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/6a/2c/56/6a2c5653-d905-bb93-6229-604b144c9687/7.jpg/1170x2532bb.jpg",
+      "sha256": "5efdf3abd9ce02a4143093682806067f76f8007240c272fc69c4fdd47c9e6770"
+    },
+    {
+      "product": "popoem",
+      "version": "6.1",
+      "file": ".reference/popoem-7.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/65/77/bd/6577bdf2-ae48-9a99-26ca-85135f7470e3/6.jpg/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/65/77/bd/6577bdf2-ae48-9a99-26ca-85135f7470e3/6.jpg/1170x2532bb.jpg",
+      "sha256": "be7cfcbd94fe65d7292997fab194ad94619e7765d0a4ec725988c7aae4195fc5"
+    },
+    {
+      "product": "popoem",
+      "version": "6.1",
+      "file": ".reference/popoem-8.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/da/1e/a9/da1ea9ac-588e-45bd-1fe3-0fc1252355df/8.jpg/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/da/1e/a9/da1ea9ac-588e-45bd-1fe3-0fc1252355df/8.jpg/1170x2532bb.jpg",
+      "sha256": "3d92b5129a50c7ec5e3cb53eb319b0f043bc1e5298174c15b32643f3f22d37f3"
+    },
+    {
+      "product": "popoem",
+      "version": "6.1",
+      "file": ".reference/popoem-9.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/de/3b/49/de3b4986-c9b0-12c8-fbd7-fd09971f1db2/9.jpg/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/de/3b/49/de3b4986-c9b0-12c8-fbd7-fd09971f1db2/9.jpg/1170x2532bb.jpg",
+      "sha256": "38082b703baf3ab5a9e8d307aa92765e5cf53b1bffe22c4de9df3a246472fdaf"
+    },
+    {
+      "product": "popoem",
+      "version": "6.1",
+      "file": ".reference/popoem-10.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d3/f3/29/d3f32910-a548-8e9a-7771-83f85616e28b/10.jpg/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d3/f3/29/d3f32910-a548-8e9a-7771-83f85616e28b/10.jpg/1170x2532bb.jpg",
+      "sha256": "d9d1d43cfd04e9d99b9e4ef6d320907f61c3edbb9a67291d21ae73fccf2cbfaa"
+    },
+    {
+      "product": "xcz",
+      "version": "8.4.1",
+      "file": ".reference/xcz-1.png",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c1/2c/e1/c12ce175-8af3-a392-92a8-a7879a063024/mzl.faszvvqo.png/392x696bb.png",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c1/2c/e1/c12ce175-8af3-a392-92a8-a7879a063024/mzl.faszvvqo.png/1170x2532bb.png",
+      "sha256": "7186f73c6d2b04b6d5374bb1707fcb1a1e6b7123adf89fb8a508d26dd70a1054"
+    },
+    {
+      "product": "xcz",
+      "version": "8.4.1",
+      "file": ".reference/xcz-2.png",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/8e/05/18/8e0518d1-aaac-f08c-5e43-86e5e917e577/mzl.uclsgsay.png/392x696bb.png",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/8e/05/18/8e0518d1-aaac-f08c-5e43-86e5e917e577/mzl.uclsgsay.png/1170x2532bb.png",
+      "sha256": "914ee402181b83bd0025017d9fda4d250ea1199454f4d29099eb2b0bf7885b0d"
+    },
+    {
+      "product": "xcz",
+      "version": "8.4.1",
+      "file": ".reference/xcz-3.png",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/56/f6/6c/56f66cc9-8c32-04b5-9d7f-04efe801c882/mzl.jwxqclpu.png/392x696bb.png",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/56/f6/6c/56f66cc9-8c32-04b5-9d7f-04efe801c882/mzl.jwxqclpu.png/1170x2532bb.png",
+      "sha256": "b66926df2640958e33de5ef3638205727774178811f4c75431f755517051eca0"
+    },
+    {
+      "product": "xcz",
+      "version": "8.4.1",
+      "file": ".reference/xcz-4.png",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/0b/c8/05/0bc805a0-da2e-3995-c7c6-b09156718163/mzl.lblzuwzq.png/392x696bb.png",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/0b/c8/05/0bc805a0-da2e-3995-c7c6-b09156718163/mzl.lblzuwzq.png/1170x2532bb.png",
+      "sha256": "df638ff341a93c5294a658e71065d2df6c908a7163cf4047a6a836e589484f69"
+    },
+    {
+      "product": "xcz",
+      "version": "8.4.1",
+      "file": ".reference/xcz-5.png",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/93/99/34/939934e0-2a72-9481-2691-b4099f6e658b/mzl.wwumxmin.png/392x696bb.png",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/93/99/34/939934e0-2a72-9481-2691-b4099f6e658b/mzl.wwumxmin.png/1170x2532bb.png",
+      "sha256": "2376cecc0c86aa86cd5b7b01732c09cc6530a53dd53105ddda2eeaeccf107797"
+    },
+    {
+      "product": "xcz",
+      "version": "8.4.1",
+      "file": ".reference/xcz-6.png",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/47/b4/29/47b429a1-cd3c-16a9-3fae-592ceec88bbb/mzl.fwensvso.png/392x696bb.png",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/47/b4/29/47b429a1-cd3c-16a9-3fae-592ceec88bbb/mzl.fwensvso.png/1170x2532bb.png",
+      "sha256": "76e524ebc269753fd2395214ce01eb7736a205fb28bdacd8ba578ef6501a7f96"
+    },
+    {
+      "product": "xcz",
+      "version": "8.4.1",
+      "file": ".reference/xcz-7.png",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/06/ff/42/06ff429d-c70f-1474-a772-10aadb2fc886/mzl.vovfrlrg.png/392x696bb.png",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/06/ff/42/06ff429d-c70f-1474-a772-10aadb2fc886/mzl.vovfrlrg.png/1170x2532bb.png",
+      "sha256": "e2b19fdff83f822a0b9187d25a5a7528d922e39187e8537875842d392e596221"
+    },
+    {
+      "product": "xcz",
+      "version": "8.4.1",
+      "file": ".reference/xcz-8.png",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/08/39/5a/08395a39-0b9a-dc16-69c8-5e5456ba4633/mzl.tlprxseg.png/392x696bb.png",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/08/39/5a/08395a39-0b9a-dc16-69c8-5e5456ba4633/mzl.tlprxseg.png/1170x2532bb.png",
+      "sha256": "9e2f1559c7f0b3cf00f2c451ae0209f276208d9dbde6a93d4a682e8dfb1cc5c8"
+    },
+    {
+      "product": "xcz",
+      "version": "8.4.1",
+      "file": ".reference/xcz-9.png",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/fb/90/df/fb90dfe8-edb7-c75b-01b2-4192173f9f5c/mzl.okmpdaod.png/392x696bb.png",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/fb/90/df/fb90dfe8-edb7-c75b-01b2-4192173f9f5c/mzl.okmpdaod.png/1170x2532bb.png",
+      "sha256": "72cac46f6d1cc95ef8dcf9484b5c18486e85a449863f3622ca1c0838ead384ba"
+    },
+    {
+      "product": "poema",
+      "version": "1.0.6",
+      "file": ".reference/poema-store-1.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/47/15/73/47157355-f95d-7622-f862-4462b2e3ce26/01_ExploreView.1.png/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/47/15/73/47157355-f95d-7622-f862-4462b2e3ce26/01_ExploreView.1.png/1170x2532bb.jpg",
+      "sha256": "fc7278718fddba0e7c97665f038ca0ea862026cd7f59cf01ece3840e033d6702"
+    },
+    {
+      "product": "poema",
+      "version": "1.0.6",
+      "file": ".reference/poema-store-2.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/7e/a9/15/7ea915c1-845f-e477-b57b-615c66a0126b/02_PoemDetailView.1.png/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/7e/a9/15/7ea915c1-845f-e477-b57b-615c66a0126b/02_PoemDetailView.1.png/1170x2532bb.jpg",
+      "sha256": "1ae8119d276514fef46f488db3b5c5be9f8fb387d2f6994c357a02c637e2acb2"
+    },
+    {
+      "product": "poema",
+      "version": "1.0.6",
+      "file": ".reference/poema-store-3.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/81/66/cc/8166cc2c-e15e-be8c-010a-435889699300/03_FollowingView.1.png/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/81/66/cc/8166cc2c-e15e-be8c-010a-435889699300/03_FollowingView.1.png/1170x2532bb.jpg",
+      "sha256": "5094b5d85dc734f8437d22cb34fe8440bd32298f0f07ca0a2d2ae5156490af23"
+    },
+    {
+      "product": "poema",
+      "version": "1.0.6",
+      "file": ".reference/poema-store-4.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f0/e8/ca/f0e8ca95-d8c5-ba4c-7401-09e18ebae6eb/04_PoemVisualizeSheet.1.png/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f0/e8/ca/f0e8ca95-d8c5-ba4c-7401-09e18ebae6eb/04_PoemVisualizeSheet.1.png/1170x2532bb.jpg",
+      "sha256": "458d81cf582dd6037dc207d14966d5515ff14782e45ddca306952d1c4155b57c"
+    },
+    {
+      "product": "poema",
+      "version": "1.0.6",
+      "file": ".reference/poema-store-5.jpg",
+      "officialSource": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/2f/8d/e8/2f8de8db-a076-295c-dc46-283f381e217f/05_WriteEditorView.1.png/320x480bb.jpg",
+      "retrievedUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/2f/8d/e8/2f8de8db-a076-295c-dc46-283f381e217f/05_WriteEditorView.1.png/1170x2532bb.jpg",
+      "sha256": "1c500ac0eb3f6c543862bf00fab562be210da6e6cdd5a0c797f95c2f545c38a5"
+    }
+  ]
+}

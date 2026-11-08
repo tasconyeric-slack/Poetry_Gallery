@@ -1,0 +1,54 @@
+// In-memory SQLite with synthetic works; never contacts production.
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {DatabaseSync} from 'node:sqlite';
+import {restoreArchive} from './restore-archive.mjs';
+const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');
+for(const f of ['0001_poems.sql','0002_author.sql','0003_revisions.sql','0004_collections.sql'])db.exec(readFileSync('worker/migrations/'+f,'utf8'));
+const DB={prepare(sql){let args=[];const q={bind(...a){args=a;return q;},async first(){return db.prepare(sql).get(...args)||null;},async all(){return {results:db.prepare(sql).all(...args)};},async run(){if(/^SELECT/i.test(sql))return {results:db.prepare(sql).all(...args)};return {meta:{changes:Number(db.prepare(sql).run(...args).changes)}};}};return q;},async batch(qs){db.exec('BEGIN');try{const r=[];for(const q of qs)r.push(await q.run());db.exec('COMMIT');return r;}catch(e){db.exec('ROLLBACK');throw e;}}};
+const {default:worker}=await import('data:text/javascript;base64,'+Buffer.from(readFileSync('worker/index.js')).toString('base64'));
+const token='a'.repeat(64),env={DB,POETRY_OWNER_TOKEN:token};
+async function send(op,body,owner=true,origin='http://localhost:8080'){
+ return worker.fetch(new Request('http://localhost:8787/?op='+op,{method:body?'POST':'GET',headers:{origin,...(owner?{authorization:'Bearer '+token}:{}),...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined}),env);
+}
+async function ok(op,body,owner=true){const r=await send(op,body,owner);assert.equal(r.status,200,await r.clone().text());return r.json();}
+const a=await ok('save',{title:'合成甲',body:'甲，\n乙。',genre:'五言'});
+const b=await ok('save',{title:'合成乙',body:'丙，\n丁。',genre:'五言',status:'published'});
+const input={title:'合成诗集',intro:'测试简介',cover:'',status:'draft',poem_ids:[a.id,b.id]};
+const first=await ok('collection-save',input),second=await ok('collection-save',{...input,title:'第二册'});
+assert.equal((await send('owner-collections',undefined,false)).status,403);
+assert.equal((await send('collection-save',input,false)).status,403);
+assert.equal((await send('collection-save',input,true,'https://other.invalid')).status,403);
+assert.equal((await send('collection-detail&id='+first.id,undefined,false)).status,404);
+assert.equal((await ok('collections',undefined,false)).collections.length,0);
+assert.deepEqual((await ok('collection-detail&id='+first.id)).poems.map(p=>p.id),[a.id,b.id]);
+const published=await ok('collection-save',{...input,id:first.id,version:1,status:'published',poem_ids:[b.id,a.id]});
+assert.equal(published.version,2);
+const publicDetail=await ok('collection-detail&id='+first.id,undefined,false);
+assert.deepEqual(publicDetail.poems.map(p=>p.id),[b.id],'private poems never exposed in a published collection');
+assert.equal(publicDetail.collection.version,undefined);
+assert.equal((await ok('collections',undefined,false)).collections[0].poem_count,1);
+assert.equal((await send('collection-save',{...input,id:first.id,version:1,poem_ids:[]})).status,409);
+assert.deepEqual((await ok('collection-detail&id='+first.id)).poems.map(p=>p.id),[b.id,a.id],'stale update must not wipe membership');
+assert.equal((await send('collection-save',{...input,id:first.id,version:2,poem_ids:[a.id,a.id]})).status,400);
+assert.equal((await send('collection-save',{...input,id:first.id,version:2,poem_ids:[crypto.randomUUID()]})).status,400);
+assert.equal((await send('collection-delete',{id:first.id,version:2})).status,400);
+assert.equal((await send('collection-delete',{id:first.id,version:1,confirm:true})).status,409);
+await ok('collection-delete',{id:first.id,version:2,confirm:true});
+assert.equal((await ok('owner-list')).poems.length,2,'deleting a collection preserves every poem');
+assert.deepEqual((await ok('collection-detail&id='+second.id)).poems.map(p=>p.id),[a.id,b.id],'other membership survives');
+assert.equal(db.prepare('SELECT COUNT(*) n FROM collection_items WHERE collection_id=?').get(first.id).n,0);
+const backup=await ok('backup');
+const recovery=new DatabaseSync(':memory:');recovery.exec('PRAGMA foreign_keys=ON');
+for(const f of ['0001_poems.sql','0002_author.sql','0003_revisions.sql','0004_collections.sql'])recovery.exec(readFileSync('worker/migrations/'+f,'utf8'));
+restoreArchive(recovery,backup);
+assert.equal(recovery.prepare('SELECT title FROM collections WHERE id=?').get(second.id).title,'第二册');
+assert.deepEqual(recovery.prepare('SELECT poem_id FROM collection_items WHERE collection_id=? ORDER BY position').all(second.id).map(x=>x.poem_id),[a.id,b.id]);
+const damaged=structuredClone(backup);damaged.collection_items[0].poem_id=crypto.randomUUID();
+assert.throws(()=>restoreArchive(recovery,damaged),/membership/);
+assert.throws(()=>restoreArchive(recovery,backup),/unchanged/);
+assert.equal(recovery.prepare('SELECT COUNT(*) n FROM collections').get().n,1);
+recovery.close();
+await ok('save',{id:b.id,version:b.version,title:'合成乙',body:'丙，\n丁。',genre:'五言',status:'draft'});
+assert.equal((await send('detail&id='+b.id,undefined,false)).status,404);
+db.close();console.log('Collections PASS: auth, private/public filtering, multiple membership, atomic ordered replacement, stale rejection, safe deletion; SQLite synthetic only.');

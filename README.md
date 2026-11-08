@@ -1,87 +1,61 @@
-# Poetry Gallery · Release 2
+# Poetry Gallery · 云端存档
 
-Only repository: tasconyeric-slack/Poetry_Gallery. Existing Vercel project: shici-archive. Existing site: https://shici.byliyz.com. Existing Worker: poetry-gallery-api, D1: poetry-gallery-d1 (6f92588b-0a92-41c6-ad43-ae014f6112fe). Release 1 / PR #1 is merged. Release 2A is PR #15; video is a separate stacked PR. Neither is authorized to merge or deploy to production yet.
+现有仓库 `tasconyeric-slack/Poetry_Gallery`，站点 https://shici.byliyz.com/，Vercel `shici-archive`，Cloudflare Worker `poetry-gallery-api`，D1 `poetry-gallery-d1`（`6f92588b-0a92-41c6-ad43-ae014f6112fe`）。本次范围是写入、私有草稿、版本归档、发布、撤回、图片及备份恢复。视频/MV 暂停，Passkey/SMS/Supabase/多用户登录不在范围内。
 
-## Write, archive, publish
+## 使用与保存
 
-Tap **写一首诗**. Title, author, body (including blank stanza lines), genre, date and note have a live preview. Every input saves immediately on this device; reopen the page to continue. Device drafts are not cloud backups: clearing browser data loses them. Export device drafts regularly. Private content never enters the public gallery unless explicitly published.
+在编辑器写诗或导入后，本机草稿立即保存在设备上；网络失败时保留本机修改。清理浏览器数据会丢失本机草稿，请定期导出。作者令牌只保存在当前页面内存，刷新/退出即清除。令牌必须是至少 64 位随机十六进制字符，不要粘贴到聊天、GitHub、URL 或本地配置文件。
 
-Unlock with the owner's capability to save a private D1 draft, publish, reopen/edit, withdraw publication, upload a compressed JPEG, or delete (confirmation required). The capability stays only in JavaScript memory; refresh/sign out clears it. It never enters URLs, localStorage, source or logs. A missing secret fails closed with an explicit device-only message. All private GETs and all mutations require server-verified Bearer credentials. Public list/detail/cover expose only published poems.
+解锁后可保存私有云端草稿，重新读取、修改、发布或撤回。保存失败和版本冲突不得显示成功或丢弃本机编辑。同一新草稿保持同一 UUID localId，首次提交响应丢失后重试不会创建重复作品。已有作品更新必须提交当前 version。封面上传同样检查并递增版本；恢复历史版本同时恢复历史封面。删除必须明确确认并提交当前版本，会删除作品、封面和修订历史，请先备份。
 
-Owner search matches title, body and author, with genre and creation-year filters. Committed changes capture the prior version atomically through a SQLite trigger; identical saves do not create revisions. Restoring a revision creates a new version and preserves the current version. Updates require the expected version; a conflict leaves device edits intact. Export them before reopening the cloud version to reconcile. Deleting a poem also deletes its history and covers, so export first.
+未授权只能访问已发布列表、详情和当前封面。撤回后，链接和封面 API 都返回 404；已下载到他人设备的副本无法追回。未配置或无效的生产 Owner Secret 会明确拒绝私有读写，不会降级为匿名写入。
 
-## One-time owner setup and production release (owner approval required)
+## 唯一后端与前端协作
 
-Do this from this repository only, after reviewing PR #15. No production migration, deployment or synthetic poem write was performed during development.
+规范路线：浏览器直接调用 `https://poetry-gallery-api.tasconyeric.workers.dev`。兼容 `/api/poetry` 转发到同一 Worker，只转发调用者的 Authorization，绝不注入服务器令牌。`POETRY_WORKER_URL`、`POETRY_GATEWAY_KEY` 不再作为依赖，已有无关 Secret 不删除。`/api/config` 从 Worker health 读取实际准备状态。
 
-1. Generate a 256-bit token **locally** with a password manager (64 random hexadecimal characters). Store it securely; do not paste it into chat, GitHub, source files or environment files. If using PowerShell, generate it in a variable without printing it:
+Task A 修后端，Task B 独立 PR 交付编辑器/上传/微信分享。上传必须携带 version，删除必须提交 `{id,version,confirm:true}`；最终前端发布须先集成 B 的适配并通过浏览器闭环。具体契约见 AGENTS.md。
 
-       $poetryBytes = [byte[]]::new(32)
-       [System.Security.Cryptography.RandomNumberGenerator]::Fill($poetryBytes)
-       $poetryToken = [Convert]::ToHexString($poetryBytes).ToLowerInvariant()
-       Set-Clipboard -Value $poetryToken
+## 私有备份与恢复
 
-2. Confirm wrangler.toml targets only poetry-gallery-api and poetry-gallery-d1. After approving release, run:
+**导出完整备份** 包含全部草稿/公开作品、版本历史和所有封面字节。另行导出本机草稿以保留未同步编辑。备份是私有数据，请安全保存。
 
-       npx wrangler@4 d1 migrations apply poetry-gallery-d1 --remote
-       npx wrangler@4 secret put POETRY_OWNER_TOKEN
-       npx wrangler@4 deploy
+Node 24+ 本地恢复（不会连接生产）：
 
-   Paste the token at the secret prompt, never as a command argument. Secret changes deploy immediately. Then unlock the site with the same token. Clear the clipboard and variable after securely storing it. Passkey replacement is deferred (#14).
-3. Merge/release only after owner approval. Vercel's existing Git integration builds the site. No new Vercel project, DNS change or public browser environment variable is needed. Direct owner Worker requests allow only verified site origins https://shici.byliyz.com and https://shici-archive.vercel.app plus localhost:8080/8787. A preview origin requires an exact comma-separated OWNER_ORIGINS entry when explicitly approved; wildcard previews are not allowed. Preview frontend alone does not upgrade the deployed production Worker.
+```bash
+node scripts/restore-archive.mjs private/archive.private.json --local private/recovery.sqlite
+```
 
-## Complete private backup and recovery
+工具用事务恢复全部记录，拒绝已有 ID、无效版本以及缺失的当前/历史封面；失败时不改原有数据库。恢复文件需检查后，再另行审批生产恢复。旧 `import-poems.mjs` 只是作品数组导入，不是完整历史恢复；本次生产发布不使用它。
 
-**导出完整备份** downloads poetry-gallery-backup-v2: all poems, author/date/status/version fields, revisions and inline cover bytes with a completeness label. Keep private. **导出本机草稿** separately preserves device edits, including edits that failed to sync.
+## 本地验证
 
-Restore a complete cloud backup to a local SQLite recovery file only:
+```bash
+node --check worker/index.js
+node scripts/smoke.mjs
+node scripts/mvp-check.mjs
+node scripts/worker.test.mjs
+node scripts/config.test.mjs
+node scripts/import-poems.test.mjs
+node scripts/d1-lifecycle.test.mjs
+node scripts/cloud-regression.test.mjs
+npx wrangler@4.158.0 d1 migrations apply poetry-gallery-d1 --local
+```
 
-    node scripts/restore-archive.mjs private/archive.private.json --local private/recovery.sqlite
+实际 workerd/D1 回归：本地开发使用合成测试凭据，可通过 Wrangler 的本地 secret binding 配置；不要使用生产令牌或将其写入 `.dev.vars`。启动 `npx wrangler@4.158.0 dev --local --port 8788 --ip 127.0.0.1`，在另一个 Git Bash 中：
 
-The recovery tool applies all forward migrations in a new local file, validates records, uses one transaction, and refuses collisions rather than overwriting works. It never connects to remote D1. Review the restored file before any separately authorized production recovery. Device exports are a different format: read/copy them back through the editor. The legacy scripts/import-poems.mjs remains for reviewed poem-array imports, not complete-history restoration.
+```bash
+POETRY_LOCAL_WORKER_URL=http://127.0.0.1:8788 node scripts/cloud-regression.test.mjs
+```
 
-## Sharing
+本地测试的所有写入仅发生在本机，脚本拒绝非 loopback 地址。迁移按 D1 的 d1_migrations 记录跳过已执行项；0002/0003 的 ALTER 不能手工重复执行 SQL。浏览器测试仍需在 Task B 集成后完成。视频测试不属于此次发布检查。
 
-Published detail links use #poem/UUID and work on cold open/refresh on the current origin. Native share, explicit copy and manual copy fallback are available. Vertical and square PNG cards render locally; long poems explicitly use vertical / PDF / original link instead of cropping. Long-press the PNG in WeChat to save. Print supports PDF and the published anthology. WeChat previews may use generic site metadata; per-poem OG previews are not claimed. Actual WeChat webview behavior still needs owner-device verification.
+## 生产发布
 
-## Verification
+生产迁移、Secret 和最终合并/部署分别等待确认。先核对绑定和迁移表，导出备份并在本地验证，再应用现有前向 0003；不得重建/清空生产库或导入测试作品。完整命令、已核实状态及待验收项见 [云端发布记录](docs/CLOUD_RELEASE.md)。Vercel Git 部署只更新前端，不会自动部署 Worker 或迁移 D1。
 
-Node 24+:
+发布后的必要线上验证先做只读/拒绝测试。真实保存→发布→撤回→备份恢复闭环需要作者操作或单独批准的生产测试写入，未经授权不写入作品。微信真机长按、原生分享和 webview 行为由最终集成验收记录明确区分。
 
-    node --check app.js
-    node --check cms.js
-    node --check worker/index.js
-    node scripts/smoke.mjs
-    node scripts/mvp-check.mjs
-    node scripts/worker.test.mjs
-    node scripts/config.test.mjs
-    node scripts/import-poems.test.mjs
-    node scripts/d1-lifecycle.test.mjs
+## Issue21 reference reconstruction
 
-Browser integration (requires `npm install --no-save playwright` and installed Chromium; set CHROME_PATH if needed):
-
-    node scripts/local-test-server.mjs
-    node scripts/browser-r2.test.mjs
-
-The test server binds loopback only, uses synthetic in-memory SQLite and the actual Worker. It never contacts Cloudflare. Browser requests to the configured Worker are intercepted into this local server. Covers draft/publish/unpublish/revisions/recovery and unauthorized boundaries are tested locally. No remote write or production completion is claimed before an authorized live check. Screenshot artifacts are in ignored .qa/. No real family content is in fixtures.
-
-## Lyric video studio (separate PR B)
-
-Open **制作视频** on a poem or **用当前草稿制作视频** in the editor. The studio is dynamically loaded and works without cloud credentials. Choose paper/dark, 10–45 seconds, optional local image (8 MB) and optional owned audio/voice (30 MB). No photo/audio/video is uploaded or stored in D1.
-
-A shared weighted timeline preserves verse/stanza boundaries with a title intro and outro, at 720×1280 and a 24fps capture target. Preview and export use the same renderer. Long poems explicitly require a separate excerpt rather than dropping text. Export happens in real time: keep the browser foregrounded; backgrounding cancels the current generation. A slow device may produce fewer frames. Use a supported desktop browser if a phone/webview cannot encode.
-
-The browser probes actual MediaRecorder MIME support: MP4/H.264 (+AAC for audio) where supported, otherwise genuine WebM/VP9 or VP8 (+Opus). The downloaded extension follows the actual recording container; WebM is never renamed to MP4. Watch the generated video before downloading. Cancellation creates no new download. A prior downloaded file remains yours. Browser MediaRecorder WebM can have an indefinite metadata duration although playback has the selected real elapsed duration. Optional local conversion, if FFmpeg is installed: `ffmpeg -i poetry-lyric.webm -c:v libx264 -pix_fmt yuv420p -c:a aac poetry-lyric.mp4`.
-
-Technical references: [MediaStream Recording specification](https://www.w3.org/TR/mediastream-recording/), [MediaRecorder format probing](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static), [Canvas capture](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/captureStream). No media library is bundled; native recording avoids an additional renderer dependency.
-
-Local checks with the synthetic test server running:
-
-    node scripts/video.test.mjs
-    node scripts/browser-video.test.mjs
-
-The browser test produces 10-second videos, checks container magic bytes, 720×1280 metadata and actual playback progress, optional synthetic audio, forced WebM fallback and cancel cleanup. Generated local evidence lives in ignored .qa/ and CI artifacts. Real WeChat/phone codec and system-share behavior still require owner-device verification. No production deployment or remote authoring test is claimed.
-
-### Actual Cloudflare local D1 check
-
-Also verified with Wrangler 4.158.0 / workerd local D1 (not just the Node SQLite adapter): apply `npx wrangler@4 d1 migrations apply poetry-gallery-d1 --local`, put a **synthetic test-only** token in ignored .dev.vars, and run `npx wrangler@4 dev --local --port 8787 --ip 127.0.0.1`. Start the static test server with POETRY_LOCAL_WORKER_URL=http://127.0.0.1:8787, then run browser-r2.test.mjs. This path forwards requests to the real local Worker/D1. Production resources remain untouched. `npx wrangler@4 deploy --dry-run` also passed.
+See [reference matrix](docs/CLONE_REFERENCE_MATRIX.md), [visual results/screenshots](docs/CLONE_VISUAL_RESULTS.md), [interaction evidence](docs/CLONE_INTERACTIONS.md) and [local/deploy instructions](docs/CLONE_RELEASE.md). Frontend includes focused writing, private library, collection management/order, favorites, typography, three PNG themes and full collection printing. Production migration0004 and Worker/frontend deployment remain separately approved steps.
